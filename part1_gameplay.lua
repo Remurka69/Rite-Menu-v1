@@ -681,6 +681,81 @@ return function(Ctx)
         CreateSlider(VisualsTab, "FOV", 70, 120, 70, function(v) camera.FieldOfView = v end)
     end
 
+    -- No Camera Bob
+do
+    local noBobConn = nil
+    CreateToggle(VisualsTab, "No Camera Bob", function(state)
+        Settings.NoCameraBob = state
+        if state then
+            if noBobConn then noBobConn:Disconnect() end
+            noBobConn = RunService.RenderStepped:Connect(function()
+                local char = player.Character
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    hum.CameraOffset = Vector3.new(0, 0, 0)
+                end
+            end)
+        else
+            if noBobConn then noBobConn:Disconnect(); noBobConn = nil end
+            local char = player.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum.CameraOffset = Vector3.new(0, 0, 0)
+            end
+        end
+    end)
+end
+
+    -- No Grass
+do
+    local originalGrass = {}
+    local grassConn = nil
+    local function removeGrass()
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") and (
+                obj.Name:lower():find("grass") or 
+                obj.Name:lower():find("bush") or
+                obj.Material == Enum.Material.Grass
+            ) then
+                if not originalGrass[obj] then
+                    originalGrass[obj] = {Transparency = obj.Transparency, CanCollide = obj.CanCollide}
+                end
+                obj.Transparency = 1
+                obj.CanCollide = false
+            end
+        end
+    end
+    local function restoreGrass()
+        for obj, data in pairs(originalGrass) do
+            if obj and obj.Parent then
+                obj.Transparency = data.Transparency
+                obj.CanCollide = data.CanCollide
+            end
+        end
+        originalGrass = {}
+    end
+    CreateToggle(VisualsTab, "No Grass", function(state)
+        Settings.NoGrass = state
+        if state then
+            removeGrass()
+            if grassConn then grassConn:Disconnect() end
+            grassConn = workspace.DescendantAdded:Connect(function(obj)
+                if Settings.NoGrass and obj:IsA("BasePart") and (
+                    obj.Name:lower():find("grass") or 
+                    obj.Name:lower():find("bush") or
+                    obj.Material == Enum.Material.Grass
+                ) then
+                    obj.Transparency = 1
+                    obj.CanCollide = false
+                end
+            end)
+        else
+            restoreGrass()
+            if grassConn then grassConn:Disconnect(); grassConn = nil end
+        end
+    end)
+end
+    
     -- World & Misc
     do
         local zoomConn = nil
@@ -743,4 +818,147 @@ return function(Ctx)
             if setfpscap then setfpscap(999) end
         end)
     end
+end
+
+-- Long Jump
+do
+    local longJumpConn = nil
+    local longJumpForce = 150
+    CreateToggle(MovementTab, "Long Jump", function(state)
+        Settings.LongJump = state
+        if state then
+            if longJumpConn then longJumpConn:Disconnect() end
+            longJumpConn = UserInputService.JumpRequest:Connect(function()
+                local char = player.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if hrp and hum and hum.FloorMaterial ~= Enum.Material.Air then
+                    local direction = hum.MoveDirection
+                    if direction.Magnitude > 0 then
+                        hrp.Velocity = hrp.Velocity + direction * longJumpForce
+                    else
+                        hrp.Velocity = hrp.Velocity + hrp.CFrame.LookVector * longJumpForce
+                    end
+                end
+            end)
+        else
+            if longJumpConn then longJumpConn:Disconnect(); longJumpConn = nil end
+        end
+    end)
+    CreateSlider(MovementTab, "Long Jump Force", 50, 300, 150, function(v)
+        longJumpForce = v / 10
+    end)
+end
+
+-- Vehicle Fly
+do
+    local vehicleFlyConn = nil
+    local vehicleFlySpeed = 50
+    CreateToggle(MovementTab, "Vehicle Fly", function(state)
+        Settings.VehicleFly = state
+        if state then
+            if vehicleFlyConn then vehicleFlyConn:Disconnect() end
+            vehicleFlyConn = RunService.Heartbeat:Connect(function()
+                local char = player.Character
+                if not char then return end
+                local seat = char:FindFirstChildWhichIsA("VehicleSeat") or char:FindFirstChildWhichIsA("Seat")
+                if seat and seat.Occupant then
+                    local bodyGyro = seat:FindFirstChild("VehicleFlyGyro")
+                    local bodyVel = seat:FindFirstChild("VehicleFlyVelocity")
+                    if not bodyGyro then
+                        bodyGyro = Instance.new("BodyGyro")
+                        bodyGyro.Name = "VehicleFlyGyro"
+                        bodyGyro.P = 10000
+                        bodyGyro.maxTorque = Vector3.new(math.huge, math.huge, math.huge)
+                        bodyGyro.Parent = seat
+                    end
+                    if not bodyVel then
+                        bodyVel = Instance.new("BodyVelocity")
+                        bodyVel.Name = "VehicleFlyVelocity"
+                        bodyVel.maxForce = Vector3.new(math.huge, math.huge, math.huge)
+                        bodyVel.Parent = seat
+                    end
+                    bodyGyro.cframe = workspace.CurrentCamera.CFrame
+                    local moveDir = Vector3.new(0, 0, 0)
+                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + workspace.CurrentCamera.CFrame.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - workspace.CurrentCamera.CFrame.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - workspace.CurrentCamera.CFrame.RightVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + workspace.CurrentCamera.CFrame.RightVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+                    if moveDir.Magnitude > 0 then
+                        bodyVel.Velocity = moveDir.Unit * vehicleFlySpeed
+                    else
+                        bodyVel.Velocity = Vector3.new(0, 0, 0)
+                    end
+                else
+                    local seatGyro = seat and seat:FindFirstChild("VehicleFlyGyro")
+                    local seatVel = seat and seat:FindFirstChild("VehicleFlyVelocity")
+                    if seatGyro then seatGyro:Destroy() end
+                    if seatVel then seatVel:Destroy() end
+                end
+            end)
+        else
+            if vehicleFlyConn then vehicleFlyConn:Disconnect(); vehicleFlyConn = nil end
+            for _, seat in ipairs(workspace:GetDescendants()) do
+                if seat:IsA("VehicleSeat") or seat:IsA("Seat") then
+                    local gyro = seat:FindFirstChild("VehicleFlyGyro")
+                    local vel = seat:FindFirstChild("VehicleFlyVelocity")
+                    if gyro then gyro:Destroy() end
+                    if vel then vel:Destroy() end
+                end
+            end
+        end
+    end)
+    CreateSlider(MovementTab, "Vehicle Fly Speed", 10, 200, 50, function(v)
+        vehicleFlySpeed = v
+    end)
+end
+
+-- Water Walk
+do
+    local waterWalkConn = nil
+    local waterPlatforms = {}
+    CreateToggle(MovementTab, "Water Walk", function(state)
+        Settings.WaterWalk = state
+        if state then
+            if waterWalkConn then waterWalkConn:Disconnect() end
+            waterWalkConn = RunService.Heartbeat:Connect(function()
+                local char = player.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if hrp and hum then
+                    local rayResult = workspace:Raycast(hrp.Position, Vector3.new(0, -10, 0))
+                    if rayResult and rayResult.Material == Enum.Material.Water then
+                        local platform = waterPlatforms[char]
+                        if not platform then
+                            platform = Instance.new("Part")
+                            platform.Name = "WaterWalkPlatform"
+                            platform.Size = Vector3.new(4, 0.2, 4)
+                            platform.Material = Enum.Material.SmoothPlastic
+                            platform.Transparency = 0.7
+                            platform.Anchored = true
+                            platform.CanCollide = true
+                            platform.Color = Color3.fromRGB(100, 150, 255)
+                            platform.Parent = workspace
+                            waterPlatforms[char] = platform
+                        end
+                        platform.Position = Vector3.new(hrp.Position.X, rayResult.Position.Y - 0.1, hrp.Position.Z)
+                    else
+                        local platform = waterPlatforms[char]
+                        if platform then
+                            platform:Destroy()
+                            waterPlatforms[char] = nil
+                        end
+                    end
+                end
+            end)
+        else
+            if waterWalkConn then waterWalkConn:Disconnect(); waterWalkConn = nil end
+            for _, platform in pairs(waterPlatforms) do
+                pcall(function() platform:Destroy() end)
+            end
+            waterPlatforms = {}
+        end
+    end)
 end

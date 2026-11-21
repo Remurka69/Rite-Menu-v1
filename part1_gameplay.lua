@@ -736,50 +736,112 @@ do
     end)
 end
 
-    -- Speed Boost on Key
+-- Speed Boost on Key
 do
     local speedBoostConn = nil
+    local inputEndedConn = nil
     local boostKey = Enum.KeyCode.LeftShift
     local boostSpeed = 100
     local originalSpeed = 16
     local isBoosting = false
+    local isListeningForKey = false
+    local speedBoostEnabled = false
+    
+    -- UI элемент для выбора клавиши
+    local KeybindFrame = Instance.new("Frame")
+    KeybindFrame.Size = UDim2.new(1, -6, 0, 40)
+    KeybindFrame.BackgroundColor3 = Theme.ElementBg
+    KeybindFrame.Parent = MovementTab
+    Instance.new("UICorner", KeybindFrame).CornerRadius = UDim.new(0, 6)
+    
+    local KeybindLabel = Instance.new("TextLabel", KeybindFrame)
+    KeybindLabel.Size = UDim2.new(0.6, -10, 1, 0)
+    KeybindLabel.Position = UDim2.new(0, 12, 0, 0)
+    KeybindLabel.BackgroundTransparency = 1
+    KeybindLabel.Text = "Speed Boost Key"
+    KeybindLabel.TextColor3 = Theme.TextDark
+    KeybindLabel.Font = FontMain
+    KeybindLabel.TextSize = 13
+    KeybindLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local KeybindBtn = Instance.new("TextButton", KeybindFrame)
+    KeybindBtn.Size = UDim2.new(0.35, -10, 0, 26)
+    KeybindBtn.Position = UDim2.new(0.65, 0, 0.5, -13)
+    KeybindBtn.BackgroundColor3 = Theme.MainBg
+    KeybindBtn.Text = "LeftShift"
+    KeybindBtn.TextColor3 = Theme.Text
+    KeybindBtn.Font = FontMain
+    KeybindBtn.TextSize = 11
+    Instance.new("UICorner", KeybindBtn).CornerRadius = UDim.new(0, 4)
+    
+    KeybindBtn.MouseButton1Click:Connect(function()
+        if isListeningForKey then return end
+        isListeningForKey = true
+        KeybindBtn.Text = "Press a key..."
+        KeybindBtn.TextColor3 = Theme.Lavender
+        
+        local conn
+        conn = UserInputService.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                boostKey = input.KeyCode
+                KeybindBtn.Text = tostring(input.KeyCode):gsub("Enum.KeyCode.", "")
+                KeybindBtn.TextColor3 = Theme.Text
+                isListeningForKey = false
+                conn:Disconnect()
+                if Ctx.Notify then
+                    Ctx.Notify("Speed Boost", "Клавиша: " .. KeybindBtn.Text, 2, "success")
+                end
+            end
+        end)
+        
+        -- Таймаут 5 секунд
+        task.delay(5, function()
+            if isListeningForKey then
+                isListeningForKey = false
+                KeybindBtn.Text = tostring(boostKey):gsub("Enum.KeyCode.", "")
+                KeybindBtn.TextColor3 = Theme.Text
+                conn:Disconnect()
+            end
+        end)
+    end)
+    
+    -- Основная логика Speed Boost
+    local function setupBoostConnections()
+        if speedBoostConn then speedBoostConn:Disconnect() end
+        if inputEndedConn then inputEndedConn:Disconnect() end
+        
+        speedBoostConn = UserInputService.InputBegan:Connect(function(input)
+            if input.KeyCode == boostKey and speedBoostEnabled and not isBoosting then
+                isBoosting = true
+                local char = player.Character
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    originalSpeed = hum.WalkSpeed
+                    hum.WalkSpeed = boostSpeed
+                end
+            end
+        end)
+        
+        inputEndedConn = UserInputService.InputEnded:Connect(function(input)
+            if input.KeyCode == boostKey and isBoosting then
+                isBoosting = false
+                local char = player.Character
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    hum.WalkSpeed = originalSpeed
+                end
+            end
+        end)
+    end
     
     CreateToggle(MovementTab, "Speed Boost on Key", function(state)
+        speedBoostEnabled = state
         Settings.SpeedBoost = state
         if state then
-            if speedBoostConn then speedBoostConn:Disconnect() end
-            
-            speedBoostConn = UserInputService.InputBegan:Connect(function(input)
-                if input.KeyCode == boostKey and not isBoosting then
-                    isBoosting = true
-                    local char = player.Character
-                    local hum = char and char:FindFirstChildOfClass("Humanoid")
-                    if hum then
-                        originalSpeed = hum.WalkSpeed
-                        hum.WalkSpeed = boostSpeed
-                    end
-                end
-            end)
-            
-            local inputEndedConn = UserInputService.InputEnded:Connect(function(input)
-                if input.KeyCode == boostKey and isBoosting then
-                    isBoosting = false
-                    local char = player.Character
-                    local hum = char and char:FindFirstChildOfClass("Humanoid")
-                    if hum then
-                        hum.WalkSpeed = originalSpeed
-                    end
-                end
-            end)
-            
-            -- Сохраняем соединение для отключения
-            local oldDisconnect = speedBoostConn.Disconnect
-            speedBoostConn.Disconnect = function(self)
-                oldDisconnect(self)
-                inputEndedConn:Disconnect()
-            end
+            setupBoostConnections()
         else
             if speedBoostConn then speedBoostConn:Disconnect(); speedBoostConn = nil end
+            if inputEndedConn then inputEndedConn:Disconnect(); inputEndedConn = nil end
             isBoosting = false
         end
     end)

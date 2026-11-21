@@ -1243,7 +1243,7 @@ for _, part in ipairs(PARTS) do
     local okHttp, srcOrErr = pcall(function()
         return getFreshCode(part.url)
     end)
-
+    
     if not okHttp or type(srcOrErr) ~= "string" or #srcOrErr == 0 then
         warn("[Loader] Ошибка HttpGet для " .. part.name .. ": " .. tostring(srcOrErr))
         if Ctx.Notify then
@@ -1257,33 +1257,23 @@ for _, part in ipairs(PARTS) do
                 Ctx.Notify("Syntax Error", part.name .. " (см. F9)", 4, "error")
             end
         else
-          local before = countElements()
-local okRun, moduleFnOrErr = pcall(chunk, Ctx)
-local after = countElements()
-
-if not okRun then
-    warn("[Loader] Ошибка выполнения чанка " .. part.name .. ": " .. tostring(moduleFnOrErr))
-    if Ctx.Notify then
-        Ctx.Notify("Runtime Error", part.name .. " (см. F9)", 4, "error")
-    end
-else
-    if type(moduleFnOrErr) == "function" then
-        before = countElements()
-        local okInit, initErr = pcall(moduleFnOrErr, Ctx)
-        after = countElements()
-        if not okInit then
-            warn("[Loader] Ошибка инициализации " .. part.name .. ": " .. tostring(initErr))
-            if Ctx.Notify then
-                Ctx.Notify("Init Error", part.name .. " (см. F9)", 4, "error")
+            -- *** ИСПРАВЛЕНИЕ ЗДЕСЬ ***
+            -- Вызываем чанк (функцию) и передаем ему Ctx
+            local success, result = pcall(chunk, Ctx)
+            
+            if not success then
+                warn("[Loader] Ошибка выполнения " .. part.name .. ": " .. tostring(result))
+                if Ctx.Notify then
+                    Ctx.Notify("Runtime Error", part.name .. " (см. F9)", 4, "error")
+                end
+            else
+                print(string.format("[Loader] %s успешно выполнен.", part.name))
             end
-        else
-            print(string.format("[Loader] %s -> добавлено элементов: %d", part.name, after - before))
         end
-    else
-        print(string.format("[Loader] %s -> добавлено элементов: %d (тип возврата: %s)", part.name, after - before, typeof(moduleFnOrErr)))
     end
 end
 
+-- После этого можно показать уведомление об успехе
 task.delay(1, function()
     if Ctx.Notify then
         Ctx.Notify("Rite Cheat", "Меню успешно загружено! Приятной игры 🎮", 4, "success")

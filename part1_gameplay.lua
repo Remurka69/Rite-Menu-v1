@@ -709,7 +709,7 @@ end
 -- Long Jump
 do
     local longJumpConn = nil
-    local longJumpForce = 150
+    local longJumpForce = 50
     CreateToggle(MovementTab, "Long Jump", function(state)
         Settings.LongJump = state
         if state then

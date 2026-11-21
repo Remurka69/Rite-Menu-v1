@@ -1227,6 +1227,18 @@ local function getFreshCode(url)
     return game:HttpGet(url .. sep .. "cb=" .. tostring(math.random(1, 1000000)) .. "_" .. tostring(os.clock()))
 end
 
+local function countElements()
+    local n = 0
+    for _, page in pairs(Ctx.Pages) do
+        for _, ch in ipairs(page:GetChildren()) do
+            if not ch:IsA("UIListLayout") and not ch:IsA("UIPadding") then
+                n += 1
+            end
+        end
+    end
+    return n
+end
+
 for _, part in ipairs(PARTS) do
     local okHttp, srcOrErr = pcall(function()
         return getFreshCode(part.url)
@@ -1245,15 +1257,23 @@ for _, part in ipairs(PARTS) do
                 Ctx.Notify("Syntax Error", part.name .. " (см. F9)", 4, "error")
             end
         else
-            local okRun, runErr = pcall(chunk, Ctx)
+            local before = countElements()
+            local okRun, resOrErr = pcall(chunk, Ctx)
+            local after = countElements()
             if not okRun then
-                warn("[Loader] Ошибка выполнения " .. part.name .. ": " .. tostring(runErr))
+                warn("[Loader] Ошибка выполнения " .. part.name .. ": " .. tostring(resOrErr))
                 if Ctx.Notify then
                     Ctx.Notify("Runtime Error", part.name .. " (см. F9)", 4, "error")
                 end
             else
-                print("[Loader] Успешно загружен: " .. part.name)
+                print(string.format("[Loader] %s -> добавлено элементов: %d (тип возврата: %s)", part.name, after - before, typeof(resOrErr)))
             end
         end
     end
 end
+
+task.delay(1, function()
+    if Ctx.Notify then
+        Ctx.Notify("Rite Cheat", "Меню успешно загружено! Приятной игры 🎮", 4, "success")
+    end
+end)

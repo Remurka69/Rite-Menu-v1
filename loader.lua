@@ -45,7 +45,7 @@ Settings = {
     Spinbot = false, Freecam = false, FreecamSpeed = 50, FreecamMouseSensitivity = 0.002,
     ESP = false, Tracers = false, TracerStyle = "Center", Chams = false, ChamStyle = "Skeleton",
     LongJump = false, WaterWalk = false,
-    NoCameraBob = false, NoGrass = false, SpeedBoost = false, KillAura = false
+    NoCameraBob = false, NoGrass = false, SpeedBoost = false
 },
     Notify = nil,
     Tabs = {},

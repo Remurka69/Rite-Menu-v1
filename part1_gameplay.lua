@@ -748,6 +748,7 @@ do
     local isBoosting = false
     local isListeningForKey = false
     local speedBoostEnabled = false
+    local activeSpeedSlider = nil
 
     local HEADER_H = 38
     local EXPANDED_H = 106
@@ -760,7 +761,7 @@ do
     Container.Parent = MovementTab
     Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 6)
 
-    -- Шапка с названием
+    -- Шапка
     local Label = Instance.new("TextLabel", Container)
     Label.Size = UDim2.new(1, -84, 1, 0)
     Label.Position = UDim2.new(0, 12, 0, 0)
@@ -780,7 +781,6 @@ do
     Chevron.Font = FontMain
     Chevron.TextSize = 10
 
-    -- Тумблер (с ZIndex чтобы был поверх Body)
     local Switch = Instance.new("TextButton", Container)
     Switch.Size = UDim2.new(0, 36, 0, 20)
     Switch.Position = UDim2.new(1, -48, 0.5, -10)
@@ -796,7 +796,7 @@ do
     Circle.ZIndex = 11
     Instance.new("UICorner", Circle).CornerRadius = UDim.new(1, 0)
 
-    -- Скрытое тело с keybind + slider
+    -- Тело (скрытое)
     local Body = Instance.new("Frame", Container)
     Body.Size = UDim2.new(1, 0, 0, 0)
     Body.Position = UDim2.new(0, 0, 0, HEADER_H)
@@ -804,18 +804,11 @@ do
     Body.Visible = false
     Body.ClipsDescendants = true
     Body.ZIndex = 1
-    local BodyList = Instance.new("UIListLayout", Body)
-    BodyList.Padding = UDim.new(0, 6)
-    BodyList.SortOrder = Enum.SortOrder.LayoutOrder
-    local pad = Instance.new("UIPadding", Body)
-    pad.PaddingTop = UDim.new(0, 6)
-    pad.PaddingBottom = UDim.new(0, 6)
-    pad.PaddingLeft = UDim.new(0, 6)
-    pad.PaddingRight = UDim.new(0, 6)
 
     -- Выбор клавиши
     local KeybindFrame = Instance.new("Frame", Body)
-    KeybindFrame.Size = UDim2.new(1, 0, 0, 40)
+    KeybindFrame.Size = UDim2.new(1, -12, 0, 40)
+    KeybindFrame.Position = UDim2.new(0, 6, 0, 6)
     KeybindFrame.BackgroundColor3 = Theme.MainBg
     Instance.new("UICorner", KeybindFrame).CornerRadius = UDim.new(0, 6)
 
@@ -865,17 +858,68 @@ do
         end)
     end)
 
-    -- Ползунок скорости
-    CreateSlider(Body, "Boost Speed", 50, 300, 100, function(v)
-        boostSpeed = v
+    -- Слайдер скорости (вручную внутри Body)
+    local SliderFrame = Instance.new("Frame", Body)
+    SliderFrame.Size = UDim2.new(1, -12, 0, 48)
+    SliderFrame.Position = UDim2.new(0, 6, 0, 52)
+    SliderFrame.BackgroundColor3 = Theme.MainBg
+    Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 6)
+
+    local SliderLabel = Instance.new("TextLabel", SliderFrame)
+    SliderLabel.Size = UDim2.new(1, -20, 0, 22)
+    SliderLabel.Position = UDim2.new(0, 12, 0, 4)
+    SliderLabel.BackgroundTransparency = 1
+    SliderLabel.Text = "Boost Speed: " .. boostSpeed
+    SliderLabel.TextColor3 = Theme.Text
+    SliderLabel.Font = FontMain
+    SliderLabel.TextSize = 12
+    SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+    local SliderBar = Instance.new("TextButton", SliderFrame)
+    SliderBar.Size = UDim2.new(1, -24, 0, 6)
+    SliderBar.Position = UDim2.new(0, 12, 0, 32)
+    SliderBar.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    SliderBar.Text = ""
+    Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
+
+    local SliderProgress = Instance.new("Frame", SliderBar)
+    SliderProgress.Size = UDim2.new((boostSpeed - 50) / (300 - 50), 0, 1, 0)
+    SliderProgress.BackgroundColor3 = Theme.Lavender
+    Instance.new("UICorner", SliderProgress).CornerRadius = UDim.new(1, 0)
+
+    local function updateSpeedSlider(input)
+        local xOffset = math.clamp(input.Position.X - SliderBar.AbsolutePosition.X, 0, SliderBar.AbsoluteSize.X)
+        local percentage = xOffset / SliderBar.AbsoluteSize.X
+        boostSpeed = math.round(50 + (300 - 50) * percentage)
+        SliderLabel.Text = "Boost Speed: " .. boostSpeed
+        SliderProgress.Size = UDim2.new(percentage, 0, 1, 0)
         if isBoosting then
             local char = player.Character
             local hum = char and char:FindFirstChildOfClass("Humanoid")
-            if hum then hum.WalkSpeed = v end
+            if hum then hum.WalkSpeed = boostSpeed end
+        end
+    end
+
+    SliderBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            activeSpeedSlider = true
+            updateSpeedSlider(input)
         end
     end)
 
-    -- Анимация раскрытия/сворачивания
+    UserInputService.InputChanged:Connect(function(input)
+        if activeSpeedSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            updateSpeedSlider(input)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            activeSpeedSlider = nil
+        end
+    end)
+
+    -- Анимация раскрытия
     local function setExpanded(expanded)
         if expanded then
             Body.Visible = true

@@ -1,5 +1,6 @@
 return function(Ctx)
 local UserInputService = Ctx.Services.UserInputService
+local TweenService = Ctx.Services.TweenService
 local Players = Ctx.Services.Players
 local RunService = Ctx.Services.RunService
 local TeleportService = Ctx.Services.TeleportService

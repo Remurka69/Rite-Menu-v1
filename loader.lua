@@ -1218,7 +1218,7 @@ end
 
 -- Загрузка остальных частей (подставь свои raw-ссылки)
 local PARTS = {
-    "https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/part1_gameplay.lua",
+    "https://raw.githubusercontent.com/Remurka69/Rite-Menu-v1/refs/heads/main/part1_gameplay.lua",
     "https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/part2_modules.lua",
     "https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/part3_settings.lua",
 }

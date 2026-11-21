@@ -731,7 +731,7 @@ do
             if longJumpConn then longJumpConn:Disconnect(); longJumpConn = nil end
         end
     end)
-    CreateSlider(MovementTab, "Long Jump Force", 50, 300, 150, function(v)
+    CreateSlider(MovementTab, "Long Jump Force", 50, 2000, 150, function(v)
         longJumpForce = v / 10
     end)
 end

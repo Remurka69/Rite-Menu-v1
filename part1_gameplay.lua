@@ -737,11 +737,8 @@ do
     end)
 end
 
--- Speed Boost on Key (раскрывающийся)
+-- Speed Boost on Key (expandable)
 do
-    local TweenService = Ctx.Services.TweenService
-    local HoverInfo = Ctx.HoverInfo
-    
     local speedBoostConn = nil
     local inputEndedConn = nil
     local boostKey = Enum.KeyCode.LeftShift
@@ -750,60 +747,73 @@ do
     local isBoosting = false
     local isListeningForKey = false
     local speedBoostEnabled = false
-    
-    -- Главный контейнер (ClipsDescendants для обрезки при сворачивании)
-    local SBMain = Instance.new("Frame")
-    SBMain.Size = UDim2.new(1, -6, 0, 38)
-    SBMain.BackgroundColor3 = Theme.ElementBg
-    SBMain.Parent = MovementTab
-    SBMain.ClipsDescendants = true
-    Instance.new("UICorner", SBMain).CornerRadius = UDim.new(0, 6)
-    
-    -- Toggle (всегда виден)
-    local SBLabel = Instance.new("TextLabel", SBMain)
-    SBLabel.Size = UDim2.new(1, -60, 1, 0)
-    SBLabel.Position = UDim2.new(0, 12, 0, 0)
-    SBLabel.BackgroundTransparency = 1
-    SBLabel.Text = "Speed Boost on Key"
-    SBLabel.TextColor3 = Theme.TextDark
-    SBLabel.Font = FontMain
-    SBLabel.TextSize = 13
-    SBLabel.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local SBSwitch = Instance.new("TextButton", SBMain)
-    SBSwitch.Size = UDim2.new(0, 36, 0, 20)
-    SBSwitch.Position = UDim2.new(1, -48, 0.5, -10)
-    SBSwitch.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-    SBSwitch.Text = ""
-    Instance.new("UICorner", SBSwitch).CornerRadius = UDim.new(1, 0)
-    
-    local SBCircle = Instance.new("Frame", SBSwitch)
-    SBCircle.Size = UDim2.new(0, 14, 0, 14)
-    SBCircle.Position = UDim2.new(0, 3, 0.5, -7)
-    SBCircle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-    Instance.new("UICorner", SBCircle).CornerRadius = UDim.new(1, 0)
-    
-    -- Контент (выезжает снизу)
-    local SBContent = Instance.new("Frame", SBMain)
-    SBContent.Size = UDim2.new(1, 0, 1, -38)
-    SBContent.Position = UDim2.new(0, 0, 1, 0)
-    SBContent.BackgroundTransparency = 1
-    SBContent.BorderSizePixel = 0
-    
-    local SBContentLayout = Instance.new("UIListLayout", SBContent)
-    SBContentLayout.Padding = UDim.new(0, 6)
-    SBContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    Instance.new("UIPadding", SBContent).PaddingTop = UDim.new(0, 8)
-    Instance.new("UIPadding", SBContent).PaddingBottom = UDim.new(0, 8)
-    
-    -- Keybind Frame
-    local KeybindFrame = Instance.new("Frame")
-    KeybindFrame.Size = UDim2.new(1, -12, 0, 40)
+
+    local HEADER_H = 38
+    local EXPANDED_H = 106 -- 6 + 40(keybind) + 6(padding) + 48(slider) + 6
+
+    -- Родительская плашка
+    local Container = Instance.new("Frame")
+    Container.Size = UDim2.new(1, -6, 0, HEADER_H)
+    Container.BackgroundColor3 = Theme.ElementBg
+    Container.ClipsDescendants = true
+    Container.Parent = MovementTab
+    Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 6)
+
+    -- Шапка с названием и тумблером
+    local Label = Instance.new("TextLabel", Container)
+    Label.Size = UDim2.new(1, -84, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = "Speed Boost on Key"
+    Label.TextColor3 = Theme.TextDark
+    Label.Font = FontMain
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Chevron = Instance.new("TextLabel", Container)
+    Chevron.Size = UDim2.new(0, 16, 0, 16)
+    Chevron.Position = UDim2.new(1, -72, 0.5, -8)
+    Chevron.BackgroundTransparency = 1
+    Chevron.Text = "▼"
+    Chevron.TextColor3 = Theme.TextDark
+    Chevron.Font = FontMain
+    Chevron.TextSize = 10
+
+    local Switch = Instance.new("TextButton", Container)
+    Switch.Size = UDim2.new(0, 36, 0, 20)
+    Switch.Position = UDim2.new(1, -48, 0.5, -10)
+    Switch.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    Switch.Text = ""
+    Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
+
+    local Circle = Instance.new("Frame", Switch)
+    Circle.Size = UDim2.new(0, 14, 0, 14)
+    Circle.Position = UDim2.new(0, 3, 0.5, -7)
+    Circle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    Instance.new("UICorner", Circle).CornerRadius = UDim.new(1, 0)
+
+    -- Скрытое тело с keybind + slider
+    local Body = Instance.new("Frame", Container)
+    Body.Size = UDim2.new(1, 0, 0, 0)
+    Body.Position = UDim2.new(0, 0, 0, HEADER_H)
+    Body.BackgroundTransparency = 1
+    Body.Visible = false
+    Body.ClipsDescendants = true
+    local BodyList = Instance.new("UIListLayout", Body)
+    BodyList.Padding = UDim.new(0, 6)
+    BodyList.SortOrder = Enum.SortOrder.LayoutOrder
+    local pad = Instance.new("UIPadding", Body)
+    pad.PaddingTop = UDim.new(0, 6)
+    pad.PaddingBottom = UDim.new(0, 6)
+    pad.PaddingLeft = UDim.new(0, 6)
+    pad.PaddingRight = UDim.new(0, 6)
+
+    -- Выбор клавиши
+    local KeybindFrame = Instance.new("Frame", Body)
+    KeybindFrame.Size = UDim2.new(1, 0, 0, 40)
     KeybindFrame.BackgroundColor3 = Theme.MainBg
-    KeybindFrame.BorderSizePixel = 0
-    KeybindFrame.Parent = SBContent
     Instance.new("UICorner", KeybindFrame).CornerRadius = UDim.new(0, 6)
-    
+
     local KeybindLabel = Instance.new("TextLabel", KeybindFrame)
     KeybindLabel.Size = UDim2.new(0.6, -10, 1, 0)
     KeybindLabel.Position = UDim2.new(0, 12, 0, 0)
@@ -811,9 +821,9 @@ do
     KeybindLabel.Text = "Boost Key"
     KeybindLabel.TextColor3 = Theme.TextDark
     KeybindLabel.Font = FontMain
-    KeybindLabel.TextSize = 12
+    KeybindLabel.TextSize = 13
     KeybindLabel.TextXAlignment = Enum.TextXAlignment.Left
-    
+
     local KeybindBtn = Instance.new("TextButton", KeybindFrame)
     KeybindBtn.Size = UDim2.new(0.35, -10, 0, 26)
     KeybindBtn.Position = UDim2.new(0.65, 0, 0.5, -13)
@@ -823,13 +833,12 @@ do
     KeybindBtn.Font = FontMain
     KeybindBtn.TextSize = 11
     Instance.new("UICorner", KeybindBtn).CornerRadius = UDim.new(0, 4)
-    
+
     KeybindBtn.MouseButton1Click:Connect(function()
         if isListeningForKey then return end
         isListeningForKey = true
-        KeybindBtn.Text = "Press..."
+        KeybindBtn.Text = "Press a key..."
         KeybindBtn.TextColor3 = Theme.Lavender
-        
         local conn
         conn = UserInputService.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Keyboard then
@@ -838,12 +847,9 @@ do
                 KeybindBtn.TextColor3 = Theme.Text
                 isListeningForKey = false
                 conn:Disconnect()
-                if Ctx.Notify then
-                    Ctx.Notify("Speed Boost", "Клавиша: " .. KeybindBtn.Text, 2, "success")
-                end
+                if Ctx.Notify then Ctx.Notify("Speed Boost", "Клавиша: " .. KeybindBtn.Text, 2, "success") end
             end
         end)
-        
         task.delay(5, function()
             if isListeningForKey then
                 isListeningForKey = false
@@ -853,119 +859,39 @@ do
             end
         end)
     end)
-    
-    -- Slider (создаем вручную)
-    local SliderFrame = Instance.new("Frame")
-    SliderFrame.Size = UDim2.new(1, -12, 0, 48)
-    SliderFrame.BackgroundColor3 = Theme.MainBg
-    SliderFrame.BorderSizePixel = 0
-    SliderFrame.Parent = SBContent
-    Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 6)
-    
-    local SliderLabel = Instance.new("TextLabel", SliderFrame)
-    SliderLabel.Size = UDim2.new(1, -20, 0, 22)
-    SliderLabel.Position = UDim2.new(0, 12, 0, 4)
-    SliderLabel.BackgroundTransparency = 1
-    SliderLabel.Text = "Boost Speed: " .. boostSpeed
-    SliderLabel.TextColor3 = Theme.Text
-    SliderLabel.Font = FontMain
-    SliderLabel.TextSize = 12
-    SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local SliderBar = Instance.new("TextButton", SliderFrame)
-    SliderBar.Size = UDim2.new(1, -24, 0, 6)
-    SliderBar.Position = UDim2.new(0, 12, 0, 32)
-    SliderBar.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-    SliderBar.Text = ""
-    Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
-    
-    local SliderProgress = Instance.new("Frame", SliderBar)
-    SliderProgress.Size = UDim2.new((boostSpeed - 50) / (300 - 50), 0, 1, 0)
-    SliderProgress.BackgroundColor3 = Theme.Lavender
-    Instance.new("UICorner", SliderProgress).CornerRadius = UDim.new(1, 0)
-    
-    local function updateSlider(input)
-        local xOffset = math.clamp(input.Position.X - SliderBar.AbsolutePosition.X, 0, SliderBar.AbsoluteSize.X)
-        local percentage = xOffset / SliderBar.AbsoluteSize.X
-        boostSpeed = math.round(50 + (300 - 50) * percentage)
-        SliderLabel.Text = "Boost Speed: " .. boostSpeed
-        SliderProgress.Size = UDim2.new(percentage, 0, 1, 0)
+
+    -- Ползунок скорости (CreateSlider принимает любой фрейм как страницу)
+    CreateSlider(Body, "Boost Speed", 50, 300, 100, function(v)
+        boostSpeed = v
         if isBoosting then
             local char = player.Character
             local hum = char and char:FindFirstChildOfClass("Humanoid")
-            if hum then hum.WalkSpeed = boostSpeed end
-        end
-    end
-    
-    SliderBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            local activeSlider = { update = updateSlider }
-            updateSlider(input)
-            local moveConn, endConn
-            moveConn = UserInputService.InputChanged:Connect(function(inp)
-                if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
-                    updateSlider(inp)
-                end
-            end)
-            endConn = UserInputService.InputEnded:Connect(function(inp)
-                if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-                    moveConn:Disconnect()
-                    endConn:Disconnect()
-                end
-            end)
+            if hum then hum.WalkSpeed = v end
         end
     end)
-    
-    -- Логика раскрытия/сворачивания
-    local CONTENT_HEIGHT = 110  -- высота контента (40 + 6 + 48 + padding)
-    local isExpanded = false
-    
-    local function expand()
-        if isExpanded then return end
-        isExpanded = true
-        TweenService:Create(SBMain, HoverInfo, {Size = UDim2.new(1, -6, 0, 38 + CONTENT_HEIGHT)}):Play()
-        TweenService:Create(SBContent, HoverInfo, {Position = UDim2.new(0, 0, 1, -CONTENT_HEIGHT)}):Play()
-        TweenService:Create(SBSwitch, HoverInfo, {BackgroundColor3 = Theme.Lavender}):Play()
-        TweenService:Create(SBCircle, HoverInfo, {Position = UDim2.new(1, -17, 0.5, -7)}):Play()
-        SBLabel.TextColor3 = Theme.Text
-    end
-    
-    local function collapse()
-        if not isExpanded then return end
-        isExpanded = false
-        TweenService:Create(SBMain, HoverInfo, {Size = UDim2.new(1, -6, 0, 38)}):Play()
-        TweenService:Create(SBContent, HoverInfo, {Position = UDim2.new(0, 0, 1, 0)}):Play()
-        TweenService:Create(SBSwitch, HoverInfo, {BackgroundColor3 = Color3.fromRGB(60, 60, 70)}):Play()
-        TweenService:Create(SBCircle, HoverInfo, {Position = UDim2.new(0, 3, 0.5, -7)}):Play()
-        SBLabel.TextColor3 = Theme.TextDark
-    end
-    
-    SBSwitch.MouseButton1Click:Connect(function()
-        speedBoostEnabled = not speedBoostEnabled
-        Settings.SpeedBoost = speedBoostEnabled
-        
-        if speedBoostEnabled then
-            expand()
-            setupBoostConnections()
-            if Ctx.Notify then
-                Ctx.Notify("Speed Boost", "Включено", 2, "success")
-            end
+
+    -- Анимация раскрытия/сворачивания
+    local function setExpanded(expanded)
+        if expanded then
+            Body.Visible = true
+            TweenService:Create(Container, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, -6, 0, HEADER_H + EXPANDED_H)}):Play()
+            TweenService:Create(Body, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, EXPANDED_H)}):Play()
+            Chevron.Text = "▲"
+            Chevron.TextColor3 = Theme.Lavender
         else
-            collapse()
-            if speedBoostConn then speedBoostConn:Disconnect(); speedBoostConn = nil end
-            if inputEndedConn then inputEndedConn:Disconnect(); inputEndedConn = nil end
-            isBoosting = false
-            if Ctx.Notify then
-                Ctx.Notify("Speed Boost", "Выключено", 2, "info")
-            end
+            local tw = TweenService:Create(Container, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(1, -6, 0, HEADER_H)})
+            TweenService:Create(Body, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(1, 0, 0, 0)}):Play()
+            tw:Play()
+            tw.Completed:Connect(function() if not speedBoostEnabled then Body.Visible = false end end)
+            Chevron.Text = "▼"
+            Chevron.TextColor3 = Theme.TextDark
         end
-    end)
-    
-    -- Основная логика Speed Boost
+    end
+
+    -- Логика буста
     local function setupBoostConnections()
         if speedBoostConn then speedBoostConn:Disconnect() end
         if inputEndedConn then inputEndedConn:Disconnect() end
-        
         speedBoostConn = UserInputService.InputBegan:Connect(function(input)
             if input.KeyCode == boostKey and speedBoostEnabled and not isBoosting then
                 isBoosting = true
@@ -977,18 +903,37 @@ do
                 end
             end
         end)
-        
         inputEndedConn = UserInputService.InputEnded:Connect(function(input)
             if input.KeyCode == boostKey and isBoosting then
                 isBoosting = false
                 local char = player.Character
                 local hum = char and char:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    hum.WalkSpeed = originalSpeed
-                end
+                if hum then hum.WalkSpeed = originalSpeed end
             end
         end)
     end
+
+    Switch.MouseButton1Click:Connect(function()
+        speedBoostEnabled = not speedBoostEnabled
+        Settings.SpeedBoost = speedBoostEnabled
+        if speedBoostEnabled then
+            TweenService:Create(Switch, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = Theme.Lavender}):Play()
+            TweenService:Create(Circle, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(1, -17, 0.5, -7)}):Play()
+            Label.TextColor3 = Theme.Text
+            setupBoostConnections()
+            setExpanded(true)
+            if Ctx.Notify then Ctx.Notify("Speed Boost", Ctx.UIStrings[Ctx.Language].Enabled, 2, "success") end
+        else
+            TweenService:Create(Switch, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(60, 60, 70)}):Play()
+            TweenService:Create(Circle, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0, 3, 0.5, -7)}):Play()
+            Label.TextColor3 = Theme.TextDark
+            isBoosting = false
+            if speedBoostConn then speedBoostConn:Disconnect(); speedBoostConn = nil end
+            if inputEndedConn then inputEndedConn:Disconnect(); inputEndedConn = nil end
+            setExpanded(false)
+            if Ctx.Notify then Ctx.Notify("Speed Boost", Ctx.UIStrings[Ctx.Language].Disabled, 2, "info") end
+        end
+    end)
 end
 
 -- Vehicle Fly

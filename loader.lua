@@ -1216,22 +1216,44 @@ do
     ContactsBtn.Parent = FoldersContainer
 end
 
--- Загрузка остальных частей (подставь свои raw-ссылки)
 local PARTS = {
-    "https://raw.githubusercontent.com/Remurka69/Rite-Menu-v1/refs/heads/main/part1_gameplay.lua",
-    "https://raw.githubusercontent.com/Remurka69/Rite-Menu-v1/refs/heads/main/part2_modules.lua",
-    "https://raw.githubusercontent.com/Remurka69/Rite-Menu-v1/refs/heads/main/part3_settings.lua",
+    { name = "part1_gameplay", url = "https://raw.githubusercontent.com/Remurka69/Rite-Menu-v1/refs/heads/main/part1_gameplay.lua" },
+    { name = "part2_modules",  url = "https://raw.githubusercontent.com/Remurka69/Rite-Menu-v1/refs/heads/main/part2_modules.lua" },
+    { name = "part3_settings", url = "https://raw.githubusercontent.com/Remurka69/Rite-Menu-v1/refs/heads/main/part3_settings.lua" },
 }
 
-for _, url in ipairs(PARTS) do
-    local src = game:HttpGet(url)
-    local chunk, err = loadstring(src)
-    assert(chunk, "Ошибка компиляции части (" .. url .. "): " .. tostring(err))
-    chunk(Ctx)
+local function getFreshCode(url)
+    local sep = url:find("?", 1, true) and "&" or "?"
+    return game:HttpGet(url .. sep .. "cb=" .. tostring(math.random(1, 1000000)) .. "_" .. tostring(os.clock()))
 end
 
-task.delay(1, function()
-    if Ctx.Notify then
-        Ctx.Notify("Rite Cheat", "Меню успешно загружено! Приятной игры 🎮", 4, "success")
+for _, part in ipairs(PARTS) do
+    local okHttp, srcOrErr = pcall(function()
+        return getFreshCode(part.url)
+    end)
+
+    if not okHttp or type(srcOrErr) ~= "string" or #srcOrErr == 0 then
+        warn("[Loader] Ошибка HttpGet для " .. part.name .. ": " .. tostring(srcOrErr))
+        if Ctx.Notify then
+            Ctx.Notify("Loader Error", "Не скачан " .. part.name .. " (см. F9)", 4, "error")
+        end
+    else
+        local chunk, loadErr = loadstring(srcOrErr)
+        if not chunk then
+            warn("[Loader] Ошибка синтаксиса в " .. part.name .. ": " .. tostring(loadErr))
+            if Ctx.Notify then
+                Ctx.Notify("Syntax Error", part.name .. " (см. F9)", 4, "error")
+            end
+        else
+            local okRun, runErr = pcall(chunk, Ctx)
+            if not okRun then
+                warn("[Loader] Ошибка выполнения " .. part.name .. ": " .. tostring(runErr))
+                if Ctx.Notify then
+                    Ctx.Notify("Runtime Error", part.name .. " (см. F9)", 4, "error")
+                end
+            else
+                print("[Loader] Успешно загружен: " .. part.name)
+            end
+        end
     end
-end)
+end

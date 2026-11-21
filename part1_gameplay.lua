@@ -315,7 +315,61 @@ CreateToggle(CombatTab, "Aimbot (Lock-on)", function(state)
         end)
     end
 end)
-
+    
+-- Kill Aura
+do
+    local killAuraConn = nil
+    local killAuraRadius = 15
+    local killAuraDamage = 25
+    
+    CreateToggle(CombatTab, "Kill Aura", function(state)
+        Settings.KillAura = state
+        if state then
+            if killAuraConn then killAuraConn:Disconnect() end
+            
+            killAuraConn = RunService.Heartbeat:Connect(function()
+                local char = player.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local tool = char and char:FindFirstChildWhichIsA("Tool")
+                
+                if hrp and tool then
+                    for _, p in ipairs(Players:GetPlayers()) do
+                        if p ~= player and p.Character then
+                            local enemyHrp = p.Character:FindFirstChild("HumanoidRootPart")
+                            local enemyHum = p.Character:FindFirstChildOfClass("Humanoid")
+                            
+                            if enemyHrp and enemyHum and enemyHum.Health > 0 then
+                                local distance = (hrp.Position - enemyHrp.Position).Magnitude
+                                
+                                if distance <= killAuraRadius then
+                                    -- Teleport к врагу
+                                    local originalCFrame = hrp.CFrame
+                                    hrp.CFrame = enemyHrp.CFrame * CFrame.new(0, 0, -3)
+                                    
+                                    -- Атака (используем инструмент)
+                                    if tool:IsA("Tool") then
+                                        tool:Activate()
+                                    end
+                                    
+                                    -- Возврат на место
+                                    task.wait(0.1)
+                                    hrp.CFrame = originalCFrame
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            if killAuraConn then killAuraConn:Disconnect(); killAuraConn = nil end
+        end
+    end)
+    
+    CreateSlider(CombatTab, "Kill Aura Radius", 5, 50, 15, function(v)
+        killAuraRadius = v
+    end)
+end
+    
 CreateToggle(MovementTab, "Enable Speed Hack", function(state)
     Settings.SpeedHackEnabled = state
     if not state then pcall(function() getHum().WalkSpeed = 16 end) end
@@ -736,71 +790,64 @@ do
     end)
 end
 
--- Vehicle Fly
+    -- Speed Boost on Key
 do
-    local vehicleFlyConn = nil
-    local vehicleFlySpeed = 50
-    CreateToggle(MovementTab, "Vehicle Fly", function(state)
-        Settings.VehicleFly = state
+    local speedBoostConn = nil
+    local boostKey = Enum.KeyCode.LeftShift
+    local boostSpeed = 100
+    local originalSpeed = 16
+    local isBoosting = false
+    
+    CreateToggle(MovementTab, "Speed Boost on Key", function(state)
+        Settings.SpeedBoost = state
         if state then
-            if vehicleFlyConn then vehicleFlyConn:Disconnect() end
-            vehicleFlyConn = RunService.Heartbeat:Connect(function()
-                local char = player.Character
-                if not char then return end
-                local seat = char:FindFirstChildWhichIsA("VehicleSeat") or char:FindFirstChildWhichIsA("Seat")
-                if seat and seat.Occupant then
-                    local bodyGyro = seat:FindFirstChild("VehicleFlyGyro")
-                    local bodyVel = seat:FindFirstChild("VehicleFlyVelocity")
-                    if not bodyGyro then
-                        bodyGyro = Instance.new("BodyGyro")
-                        bodyGyro.Name = "VehicleFlyGyro"
-                        bodyGyro.P = 10000
-                        bodyGyro.maxTorque = Vector3.new(math.huge, math.huge, math.huge)
-                        bodyGyro.Parent = seat
+            if speedBoostConn then speedBoostConn:Disconnect() end
+            
+            speedBoostConn = UserInputService.InputBegan:Connect(function(input)
+                if input.KeyCode == boostKey and not isBoosting then
+                    isBoosting = true
+                    local char = player.Character
+                    local hum = char and char:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        originalSpeed = hum.WalkSpeed
+                        hum.WalkSpeed = boostSpeed
                     end
-                    if not bodyVel then
-                        bodyVel = Instance.new("BodyVelocity")
-                        bodyVel.Name = "VehicleFlyVelocity"
-                        bodyVel.maxForce = Vector3.new(math.huge, math.huge, math.huge)
-                        bodyVel.Parent = seat
-                    end
-                    bodyGyro.cframe = workspace.CurrentCamera.CFrame
-                    local moveDir = Vector3.new(0, 0, 0)
-                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + workspace.CurrentCamera.CFrame.LookVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - workspace.CurrentCamera.CFrame.LookVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - workspace.CurrentCamera.CFrame.RightVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + workspace.CurrentCamera.CFrame.RightVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
-                    if moveDir.Magnitude > 0 then
-                        bodyVel.Velocity = moveDir.Unit * vehicleFlySpeed
-                    else
-                        bodyVel.Velocity = Vector3.new(0, 0, 0)
-                    end
-                else
-                    local seatGyro = seat and seat:FindFirstChild("VehicleFlyGyro")
-                    local seatVel = seat and seat:FindFirstChild("VehicleFlyVelocity")
-                    if seatGyro then seatGyro:Destroy() end
-                    if seatVel then seatVel:Destroy() end
                 end
             end)
-        else
-            if vehicleFlyConn then vehicleFlyConn:Disconnect(); vehicleFlyConn = nil end
-            for _, seat in ipairs(workspace:GetDescendants()) do
-                if seat:IsA("VehicleSeat") or seat:IsA("Seat") then
-                    local gyro = seat:FindFirstChild("VehicleFlyGyro")
-                    local vel = seat:FindFirstChild("VehicleFlyVelocity")
-                    if gyro then gyro:Destroy() end
-                    if vel then vel:Destroy() end
+            
+            local inputEndedConn = UserInputService.InputEnded:Connect(function(input)
+                if input.KeyCode == boostKey and isBoosting then
+                    isBoosting = false
+                    local char = player.Character
+                    local hum = char and char:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        hum.WalkSpeed = originalSpeed
+                    end
                 end
+            end)
+            
+            -- Сохраняем соединение для отключения
+            local oldDisconnect = speedBoostConn.Disconnect
+            speedBoostConn.Disconnect = function(self)
+                oldDisconnect(self)
+                inputEndedConn:Disconnect()
             end
+        else
+            if speedBoostConn then speedBoostConn:Disconnect(); speedBoostConn = nil end
+            isBoosting = false
         end
     end)
-    CreateSlider(MovementTab, "Vehicle Fly Speed", 10, 200, 50, function(v)
-        vehicleFlySpeed = v
+    
+    CreateSlider(MovementTab, "Boost Speed", 50, 300, 100, function(v)
+        boostSpeed = v
+        if isBoosting then
+            local char = player.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = v end
+        end
     end)
 end
-
+    
 -- Water Walk
 do
     local waterWalkConn = nil

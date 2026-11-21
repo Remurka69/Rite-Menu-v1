@@ -750,7 +750,7 @@ do
     local speedBoostEnabled = false
 
     local HEADER_H = 38
-    local EXPANDED_H = 106 -- 6 + 40(keybind) + 6(padding) + 48(slider) + 6
+    local EXPANDED_H = 106
 
     -- Родительская плашка
     local Container = Instance.new("Frame")
@@ -760,7 +760,7 @@ do
     Container.Parent = MovementTab
     Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 6)
 
-    -- Шапка с названием и тумблером
+    -- Шапка с названием
     local Label = Instance.new("TextLabel", Container)
     Label.Size = UDim2.new(1, -84, 1, 0)
     Label.Position = UDim2.new(0, 12, 0, 0)
@@ -780,17 +780,20 @@ do
     Chevron.Font = FontMain
     Chevron.TextSize = 10
 
+    -- Тумблер (с ZIndex чтобы был поверх Body)
     local Switch = Instance.new("TextButton", Container)
     Switch.Size = UDim2.new(0, 36, 0, 20)
     Switch.Position = UDim2.new(1, -48, 0.5, -10)
     Switch.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
     Switch.Text = ""
+    Switch.ZIndex = 10
     Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
 
     local Circle = Instance.new("Frame", Switch)
     Circle.Size = UDim2.new(0, 14, 0, 14)
     Circle.Position = UDim2.new(0, 3, 0.5, -7)
     Circle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    Circle.ZIndex = 11
     Instance.new("UICorner", Circle).CornerRadius = UDim.new(1, 0)
 
     -- Скрытое тело с keybind + slider
@@ -800,6 +803,7 @@ do
     Body.BackgroundTransparency = 1
     Body.Visible = false
     Body.ClipsDescendants = true
+    Body.ZIndex = 1
     local BodyList = Instance.new("UIListLayout", Body)
     BodyList.Padding = UDim.new(0, 6)
     BodyList.SortOrder = Enum.SortOrder.LayoutOrder
@@ -861,7 +865,7 @@ do
         end)
     end)
 
-    -- Ползунок скорости (CreateSlider принимает любой фрейм как страницу)
+    -- Ползунок скорости
     CreateSlider(Body, "Boost Speed", 50, 300, 100, function(v)
         boostSpeed = v
         if isBoosting then
@@ -936,7 +940,7 @@ do
         end
     end)
 end
-
+    
 -- Vehicle Fly
 do
     local vehicleFlyConn = nil

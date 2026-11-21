@@ -316,60 +316,6 @@ CreateToggle(CombatTab, "Aimbot (Lock-on)", function(state)
     end
 end)
     
--- Kill Aura
-do
-    local killAuraConn = nil
-    local killAuraRadius = 15
-    local killAuraDamage = 25
-    
-    CreateToggle(CombatTab, "Kill Aura", function(state)
-        Settings.KillAura = state
-        if state then
-            if killAuraConn then killAuraConn:Disconnect() end
-            
-            killAuraConn = RunService.Heartbeat:Connect(function()
-                local char = player.Character
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                local tool = char and char:FindFirstChildWhichIsA("Tool")
-                
-                if hrp and tool then
-                    for _, p in ipairs(Players:GetPlayers()) do
-                        if p ~= player and p.Character then
-                            local enemyHrp = p.Character:FindFirstChild("HumanoidRootPart")
-                            local enemyHum = p.Character:FindFirstChildOfClass("Humanoid")
-                            
-                            if enemyHrp and enemyHum and enemyHum.Health > 0 then
-                                local distance = (hrp.Position - enemyHrp.Position).Magnitude
-                                
-                                if distance <= killAuraRadius then
-                                    -- Teleport к врагу
-                                    local originalCFrame = hrp.CFrame
-                                    hrp.CFrame = enemyHrp.CFrame * CFrame.new(0, 0, -3)
-                                    
-                                    -- Атака (используем инструмент)
-                                    if tool:IsA("Tool") then
-                                        tool:Activate()
-                                    end
-                                    
-                                    -- Возврат на место
-                                    task.wait(0.1)
-                                    hrp.CFrame = originalCFrame
-                                end
-                            end
-                        end
-                    end
-                end
-            end)
-        else
-            if killAuraConn then killAuraConn:Disconnect(); killAuraConn = nil end
-        end
-    end)
-    
-    CreateSlider(CombatTab, "Kill Aura Radius", 5, 50, 15, function(v)
-        killAuraRadius = v
-    end)
-end
-    
 CreateToggle(MovementTab, "Enable Speed Hack", function(state)
     Settings.SpeedHackEnabled = state
     if not state then pcall(function() getHum().WalkSpeed = 16 end) end

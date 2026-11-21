@@ -38,13 +38,15 @@ local Ctx = {
     FontDesc = Enum.Font.SourceSansBold,
     HoverInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
     SlideInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-    Settings = {
-        WalkSpeed = 16, JumpPower = 50, SpeedHackEnabled = false, JumpHackEnabled = false,
-        InfJump = false, InfZoom = false, Noclip = false, FreezeSelf = false,
-        NightVision = false, Aimbot = false,
-        Spinbot = false, Freecam = false, FreecamSpeed = 50, FreecamMouseSensitivity = 0.002,
-        ESP = false, Tracers = false, TracerStyle = "Center", Chams = false, ChamStyle = "Skeleton"
-    },
+   Settings = {
+    WalkSpeed = 16, JumpPower = 50, SpeedHackEnabled = false, JumpHackEnabled = false,
+    InfJump = false, InfZoom = false, Noclip = false, FreezeSelf = false,
+    NightVision = false, Aimbot = false,
+    Spinbot = false, Freecam = false, FreecamSpeed = 50, FreecamMouseSensitivity = 0.002,
+    ESP = false, Tracers = false, TracerStyle = "Center", Chams = false, ChamStyle = "Skeleton",
+    LongJump = false, VehicleFly = false, WaterWalk = false,
+    NoCameraBob = false, NoGrass = false
+},
     Notify = nil,
     Tabs = {},
     UI = {},

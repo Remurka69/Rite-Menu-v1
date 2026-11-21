@@ -1239,43 +1239,47 @@ local function countElements()
     return n
 end
 
+print("[Loader] Начинаю загрузку модулей...")
 for _, part in ipairs(PARTS) do
+    print("[Loader] Загрузка " .. part.name)
+    
     local okHttp, srcOrErr = pcall(function()
         return getFreshCode(part.url)
     end)
     
     if not okHttp or type(srcOrErr) ~= "string" or #srcOrErr == 0 then
-        warn("[Loader] Ошибка HttpGet для " .. part.name .. ": " .. tostring(srcOrErr))
-        if Ctx.Notify then
-            Ctx.Notify("Loader Error", "Не скачан " .. part.name .. " (см. F9)", 4, "error")
+        warn("[Loader] HttpGet Error for " .. part.name .. ": " .. tostring(srcOrErr))
+        continue
+    end
+    
+    local chunk, loadErr = loadstring(srcOrErr)
+    if not chunk then
+        warn("[Loader] Syntax Error in " .. part.name .. ": " .. tostring(loadErr))
+        continue
+    end
+    
+    -- Выполняем чанк. Он должен вернуть функцию.
+    local success, result = pcall(chunk)
+    
+    if not success then
+        warn("[Loader] Chunk Execution Error in " .. part.name .. ": " .. tostring(result))
+    elseif type(result) == "function" then
+        -- Вызываем полученную функцию, передавая контекст
+        local initSuccess, initError = pcall(result, Ctx)
+        
+        if not initSuccess then
+            warn("[Loader] Init Function Error in " .. part.name .. ": " .. tostring(initError))
+        else
+            print(string.format("[Loader] %s initialized successfully.", part.name))
         end
     else
-        local chunk, loadErr = loadstring(srcOrErr)
-        if not chunk then
-            warn("[Loader] Ошибка синтаксиса в " .. part.name .. ": " .. tostring(loadErr))
-            if Ctx.Notify then
-                Ctx.Notify("Syntax Error", part.name .. " (см. F9)", 4, "error")
-            end
-        else
-            -- *** ИСПРАВЛЕНИЕ ЗДЕСЬ ***
-            -- Вызываем чанк (функцию) и передаем ему Ctx
-            local success, result = pcall(chunk, Ctx)
-            
-            if not success then
-                warn("[Loader] Ошибка выполнения " .. part.name .. ": " .. tostring(result))
-                if Ctx.Notify then
-                    Ctx.Notify("Runtime Error", part.name .. " (см. F9)", 4, "error")
-                end
-            else
-                print(string.format("[Loader] %s успешно выполнен.", part.name))
-            end
-        end
+        warn("[Loader] Expected function from " .. part.name .. ", got " .. typeof(result))
     end
 end
 
--- После этого можно показать уведомление об успехе
-task.delay(1, function()
-    if Ctx.Notify then
-        Ctx.Notify("Rite Cheat", "Меню успешно загружено! Приятной игры 🎮", 4, "success")
-    end
-end)
+print("[Loader] Все модули обработаны.")
+task.wait(0.5) -- Дать время UI обновиться
+
+if Ctx.Notify then
+    Ctx.Notify("Rite Cheat", "Меню загружено! Проверьте F9 на ошибки.", 5, "success")
+end

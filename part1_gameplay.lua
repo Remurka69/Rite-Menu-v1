@@ -747,49 +747,49 @@ do
     local isListeningForKey = false
     local speedBoostEnabled = false
     
-    -- UI элемент для выбора клавиши
-    local KeybindFrame = Instance.new("Frame")
-    KeybindFrame.Size = UDim2.new(1, -6, 0, 40)
-    KeybindFrame.BackgroundColor3 = Theme.ElementBg
-    KeybindFrame.Parent = MovementTab
-    Instance.new("UICorner", KeybindFrame).CornerRadius = UDim.new(0, 6)
+    -- UI элемент для выбора клавиши (как Menu Toggle Key)
+    local SpeedBoostKeybindFrame = Instance.new("Frame")
+    SpeedBoostKeybindFrame.Size = UDim2.new(1, -6, 0, 40)
+    SpeedBoostKeybindFrame.BackgroundColor3 = Theme.ElementBg
+    SpeedBoostKeybindFrame.Parent = MovementTab
+    Instance.new("UICorner", SpeedBoostKeybindFrame).CornerRadius = UDim.new(0, 6)
     
-    local KeybindLabel = Instance.new("TextLabel", KeybindFrame)
-    KeybindLabel.Size = UDim2.new(0.6, -10, 1, 0)
-    KeybindLabel.Position = UDim2.new(0, 12, 0, 0)
-    KeybindLabel.BackgroundTransparency = 1
-    KeybindLabel.Text = "Speed Boost Key"
-    KeybindLabel.TextColor3 = Theme.TextDark
-    KeybindLabel.Font = FontMain
-    KeybindLabel.TextSize = 13
-    KeybindLabel.TextXAlignment = Enum.TextXAlignment.Left
+    local SpeedBoostKeybindLabel = Instance.new("TextLabel", SpeedBoostKeybindFrame)
+    SpeedBoostKeybindLabel.Size = UDim2.new(0.6, -10, 1, 0)
+    SpeedBoostKeybindLabel.Position = UDim2.new(0, 12, 0, 0)
+    SpeedBoostKeybindLabel.BackgroundTransparency = 1
+    SpeedBoostKeybindLabel.Text = "Speed Boost Key"
+    SpeedBoostKeybindLabel.TextColor3 = Theme.TextDark
+    SpeedBoostKeybindLabel.Font = FontMain
+    SpeedBoostKeybindLabel.TextSize = 13
+    SpeedBoostKeybindLabel.TextXAlignment = Enum.TextXAlignment.Left
     
-    local KeybindBtn = Instance.new("TextButton", KeybindFrame)
-    KeybindBtn.Size = UDim2.new(0.35, -10, 0, 26)
-    KeybindBtn.Position = UDim2.new(0.65, 0, 0.5, -13)
-    KeybindBtn.BackgroundColor3 = Theme.MainBg
-    KeybindBtn.Text = "LeftShift"
-    KeybindBtn.TextColor3 = Theme.Text
-    KeybindBtn.Font = FontMain
-    KeybindBtn.TextSize = 11
-    Instance.new("UICorner", KeybindBtn).CornerRadius = UDim.new(0, 4)
+    local SpeedBoostKeybindBtn = Instance.new("TextButton", SpeedBoostKeybindFrame)
+    SpeedBoostKeybindBtn.Size = UDim2.new(0.35, -10, 0, 26)
+    SpeedBoostKeybindBtn.Position = UDim2.new(0.65, 0, 0.5, -13)
+    SpeedBoostKeybindBtn.BackgroundColor3 = Theme.MainBg
+    SpeedBoostKeybindBtn.Text = "LeftShift"
+    SpeedBoostKeybindBtn.TextColor3 = Theme.Text
+    SpeedBoostKeybindBtn.Font = FontMain
+    SpeedBoostKeybindBtn.TextSize = 11
+    Instance.new("UICorner", SpeedBoostKeybindBtn).CornerRadius = UDim.new(0, 4)
     
-    KeybindBtn.MouseButton1Click:Connect(function()
+    SpeedBoostKeybindBtn.MouseButton1Click:Connect(function()
         if isListeningForKey then return end
         isListeningForKey = true
-        KeybindBtn.Text = "Press a key..."
-        KeybindBtn.TextColor3 = Theme.Lavender
+        SpeedBoostKeybindBtn.Text = "Press a key..."
+        SpeedBoostKeybindBtn.TextColor3 = Theme.Lavender
         
         local conn
         conn = UserInputService.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Keyboard then
                 boostKey = input.KeyCode
-                KeybindBtn.Text = tostring(input.KeyCode):gsub("Enum.KeyCode.", "")
-                KeybindBtn.TextColor3 = Theme.Text
+                SpeedBoostKeybindBtn.Text = tostring(input.KeyCode):gsub("Enum.KeyCode.", "")
+                SpeedBoostKeybindBtn.TextColor3 = Theme.Text
                 isListeningForKey = false
                 conn:Disconnect()
                 if Ctx.Notify then
-                    Ctx.Notify("Speed Boost", "Клавиша: " .. KeybindBtn.Text, 2, "success")
+                    Ctx.Notify("Speed Boost", "Клавиша: " .. SpeedBoostKeybindBtn.Text, 2, "success")
                 end
             end
         end)
@@ -798,11 +798,21 @@ do
         task.delay(5, function()
             if isListeningForKey then
                 isListeningForKey = false
-                KeybindBtn.Text = tostring(boostKey):gsub("Enum.KeyCode.", "")
-                KeybindBtn.TextColor3 = Theme.Text
+                SpeedBoostKeybindBtn.Text = tostring(boostKey):gsub("Enum.KeyCode.", "")
+                SpeedBoostKeybindBtn.TextColor3 = Theme.Text
                 conn:Disconnect()
             end
         end)
+    end)
+    
+    -- Ползунок скорости
+    CreateSlider(MovementTab, "Boost Speed", 50, 300, 100, function(v)
+        boostSpeed = v
+        if isBoosting then
+            local char = player.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = v end
+        end
     end)
     
     -- Основная логика Speed Boost
@@ -843,15 +853,6 @@ do
             if speedBoostConn then speedBoostConn:Disconnect(); speedBoostConn = nil end
             if inputEndedConn then inputEndedConn:Disconnect(); inputEndedConn = nil end
             isBoosting = false
-        end
-    end)
-    
-    CreateSlider(MovementTab, "Boost Speed", 50, 300, 100, function(v)
-        boostSpeed = v
-        if isBoosting then
-            local char = player.Character
-            local hum = char and char:FindFirstChildOfClass("Humanoid")
-            if hum then hum.WalkSpeed = v end
         end
     end)
 end

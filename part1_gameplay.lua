@@ -737,8 +737,11 @@ do
     end)
 end
 
--- Speed Boost on Key
+-- Speed Boost on Key (раскрывающийся)
 do
+    local TweenService = Ctx.Services.TweenService
+    local HoverInfo = Ctx.HoverInfo
+    
     local speedBoostConn = nil
     local inputEndedConn = nil
     local boostKey = Enum.KeyCode.LeftShift
@@ -747,80 +750,222 @@ do
     local isBoosting = false
     local isListeningForKey = false
     local speedBoostEnabled = false
-
-    -- UI элемент для выбора клавиши (как Menu Toggle Key)
-    local SpeedBoostKeybindFrame = Instance.new("Frame")
-    SpeedBoostKeybindFrame.Size = UDim2.new(1, -6, 0, 40)
-    SpeedBoostKeybindFrame.BackgroundColor3 = Theme.ElementBg
-    SpeedBoostKeybindFrame.Parent = MovementTab
-    Instance.new("UICorner", SpeedBoostKeybindFrame).CornerRadius = UDim.new(0, 6)
-
-    local SpeedBoostKeybindLabel = Instance.new("TextLabel", SpeedBoostKeybindFrame)
-    SpeedBoostKeybindLabel.Size = UDim2.new(0.6, -10, 1, 0)
-    SpeedBoostKeybindLabel.Position = UDim2.new(0, 12, 0, 0)
-    SpeedBoostKeybindLabel.BackgroundTransparency = 1
-    SpeedBoostKeybindLabel.Text = "Speed Boost Key"
-    SpeedBoostKeybindLabel.TextColor3 = Theme.TextDark
-    SpeedBoostKeybindLabel.Font = FontMain
-    SpeedBoostKeybindLabel.TextSize = 13
-    SpeedBoostKeybindLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-    local SpeedBoostKeybindBtn = Instance.new("TextButton", SpeedBoostKeybindFrame)
-    SpeedBoostKeybindBtn.Size = UDim2.new(0.35, -10, 0, 26)
-    SpeedBoostKeybindBtn.Position = UDim2.new(0.65, 0, 0.5, -13)
-    SpeedBoostKeybindBtn.BackgroundColor3 = Theme.MainBg
-    SpeedBoostKeybindBtn.Text = "LeftShift"
-    SpeedBoostKeybindBtn.TextColor3 = Theme.Text
-    SpeedBoostKeybindBtn.Font = FontMain
-    SpeedBoostKeybindBtn.TextSize = 11
-    Instance.new("UICorner", SpeedBoostKeybindBtn).CornerRadius = UDim.new(0, 4)
-
-    SpeedBoostKeybindBtn.MouseButton1Click:Connect(function()
+    
+    -- Главный контейнер (ClipsDescendants для обрезки при сворачивании)
+    local SBMain = Instance.new("Frame")
+    SBMain.Size = UDim2.new(1, -6, 0, 38)
+    SBMain.BackgroundColor3 = Theme.ElementBg
+    SBMain.Parent = MovementTab
+    SBMain.ClipsDescendants = true
+    Instance.new("UICorner", SBMain).CornerRadius = UDim.new(0, 6)
+    
+    -- Toggle (всегда виден)
+    local SBLabel = Instance.new("TextLabel", SBMain)
+    SBLabel.Size = UDim2.new(1, -60, 1, 0)
+    SBLabel.Position = UDim2.new(0, 12, 0, 0)
+    SBLabel.BackgroundTransparency = 1
+    SBLabel.Text = "Speed Boost on Key"
+    SBLabel.TextColor3 = Theme.TextDark
+    SBLabel.Font = FontMain
+    SBLabel.TextSize = 13
+    SBLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local SBSwitch = Instance.new("TextButton", SBMain)
+    SBSwitch.Size = UDim2.new(0, 36, 0, 20)
+    SBSwitch.Position = UDim2.new(1, -48, 0.5, -10)
+    SBSwitch.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    SBSwitch.Text = ""
+    Instance.new("UICorner", SBSwitch).CornerRadius = UDim.new(1, 0)
+    
+    local SBCircle = Instance.new("Frame", SBSwitch)
+    SBCircle.Size = UDim2.new(0, 14, 0, 14)
+    SBCircle.Position = UDim2.new(0, 3, 0.5, -7)
+    SBCircle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    Instance.new("UICorner", SBCircle).CornerRadius = UDim.new(1, 0)
+    
+    -- Контент (выезжает снизу)
+    local SBContent = Instance.new("Frame", SBMain)
+    SBContent.Size = UDim2.new(1, 0, 1, -38)
+    SBContent.Position = UDim2.new(0, 0, 1, 0)
+    SBContent.BackgroundTransparency = 1
+    SBContent.BorderSizePixel = 0
+    
+    local SBContentLayout = Instance.new("UIListLayout", SBContent)
+    SBContentLayout.Padding = UDim.new(0, 6)
+    SBContentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    Instance.new("UIPadding", SBContent).PaddingTop = UDim.new(0, 8)
+    Instance.new("UIPadding", SBContent).PaddingBottom = UDim.new(0, 8)
+    
+    -- Keybind Frame
+    local KeybindFrame = Instance.new("Frame")
+    KeybindFrame.Size = UDim2.new(1, -12, 0, 40)
+    KeybindFrame.BackgroundColor3 = Theme.MainBg
+    KeybindFrame.BorderSizePixel = 0
+    KeybindFrame.Parent = SBContent
+    Instance.new("UICorner", KeybindFrame).CornerRadius = UDim.new(0, 6)
+    
+    local KeybindLabel = Instance.new("TextLabel", KeybindFrame)
+    KeybindLabel.Size = UDim2.new(0.6, -10, 1, 0)
+    KeybindLabel.Position = UDim2.new(0, 12, 0, 0)
+    KeybindLabel.BackgroundTransparency = 1
+    KeybindLabel.Text = "Boost Key"
+    KeybindLabel.TextColor3 = Theme.TextDark
+    KeybindLabel.Font = FontMain
+    KeybindLabel.TextSize = 12
+    KeybindLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local KeybindBtn = Instance.new("TextButton", KeybindFrame)
+    KeybindBtn.Size = UDim2.new(0.35, -10, 0, 26)
+    KeybindBtn.Position = UDim2.new(0.65, 0, 0.5, -13)
+    KeybindBtn.BackgroundColor3 = Theme.ElementBg
+    KeybindBtn.Text = "LeftShift"
+    KeybindBtn.TextColor3 = Theme.Text
+    KeybindBtn.Font = FontMain
+    KeybindBtn.TextSize = 11
+    Instance.new("UICorner", KeybindBtn).CornerRadius = UDim.new(0, 4)
+    
+    KeybindBtn.MouseButton1Click:Connect(function()
         if isListeningForKey then return end
         isListeningForKey = true
-        SpeedBoostKeybindBtn.Text = "Press a key..."
-        SpeedBoostKeybindBtn.TextColor3 = Theme.Lavender
-
+        KeybindBtn.Text = "Press..."
+        KeybindBtn.TextColor3 = Theme.Lavender
+        
         local conn
         conn = UserInputService.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Keyboard then
                 boostKey = input.KeyCode
-                SpeedBoostKeybindBtn.Text = tostring(input.KeyCode):gsub("Enum.KeyCode.", "")
-                SpeedBoostKeybindBtn.TextColor3 = Theme.Text
+                KeybindBtn.Text = tostring(input.KeyCode):gsub("Enum.KeyCode.", "")
+                KeybindBtn.TextColor3 = Theme.Text
                 isListeningForKey = false
                 conn:Disconnect()
                 if Ctx.Notify then
-                    Ctx.Notify("Speed Boost", "Клавиша: " .. SpeedBoostKeybindBtn.Text, 2, "success")
+                    Ctx.Notify("Speed Boost", "Клавиша: " .. KeybindBtn.Text, 2, "success")
                 end
             end
         end)
-
-        -- Таймаут 5 секунд
+        
         task.delay(5, function()
             if isListeningForKey then
                 isListeningForKey = false
-                SpeedBoostKeybindBtn.Text = tostring(boostKey):gsub("Enum.KeyCode.", "")
-                SpeedBoostKeybindBtn.TextColor3 = Theme.Text
+                KeybindBtn.Text = tostring(boostKey):gsub("Enum.KeyCode.", "")
+                KeybindBtn.TextColor3 = Theme.Text
                 conn:Disconnect()
             end
         end)
     end)
-
-    -- Ползунок скорости
-    CreateSlider(MovementTab, "Boost Speed", 50, 300, 100, function(v)
-        boostSpeed = v
+    
+    -- Slider (создаем вручную)
+    local SliderFrame = Instance.new("Frame")
+    SliderFrame.Size = UDim2.new(1, -12, 0, 48)
+    SliderFrame.BackgroundColor3 = Theme.MainBg
+    SliderFrame.BorderSizePixel = 0
+    SliderFrame.Parent = SBContent
+    Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 6)
+    
+    local SliderLabel = Instance.new("TextLabel", SliderFrame)
+    SliderLabel.Size = UDim2.new(1, -20, 0, 22)
+    SliderLabel.Position = UDim2.new(0, 12, 0, 4)
+    SliderLabel.BackgroundTransparency = 1
+    SliderLabel.Text = "Boost Speed: " .. boostSpeed
+    SliderLabel.TextColor3 = Theme.Text
+    SliderLabel.Font = FontMain
+    SliderLabel.TextSize = 12
+    SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local SliderBar = Instance.new("TextButton", SliderFrame)
+    SliderBar.Size = UDim2.new(1, -24, 0, 6)
+    SliderBar.Position = UDim2.new(0, 12, 0, 32)
+    SliderBar.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+    SliderBar.Text = ""
+    Instance.new("UICorner", SliderBar).CornerRadius = UDim.new(1, 0)
+    
+    local SliderProgress = Instance.new("Frame", SliderBar)
+    SliderProgress.Size = UDim2.new((boostSpeed - 50) / (300 - 50), 0, 1, 0)
+    SliderProgress.BackgroundColor3 = Theme.Lavender
+    Instance.new("UICorner", SliderProgress).CornerRadius = UDim.new(1, 0)
+    
+    local function updateSlider(input)
+        local xOffset = math.clamp(input.Position.X - SliderBar.AbsolutePosition.X, 0, SliderBar.AbsoluteSize.X)
+        local percentage = xOffset / SliderBar.AbsoluteSize.X
+        boostSpeed = math.round(50 + (300 - 50) * percentage)
+        SliderLabel.Text = "Boost Speed: " .. boostSpeed
+        SliderProgress.Size = UDim2.new(percentage, 0, 1, 0)
         if isBoosting then
             local char = player.Character
             local hum = char and char:FindFirstChildOfClass("Humanoid")
-            if hum then hum.WalkSpeed = v end
+            if hum then hum.WalkSpeed = boostSpeed end
+        end
+    end
+    
+    SliderBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            local activeSlider = { update = updateSlider }
+            updateSlider(input)
+            local moveConn, endConn
+            moveConn = UserInputService.InputChanged:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
+                    updateSlider(inp)
+                end
+            end)
+            endConn = UserInputService.InputEnded:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+                    moveConn:Disconnect()
+                    endConn:Disconnect()
+                end
+            end)
         end
     end)
-
+    
+    -- Логика раскрытия/сворачивания
+    local CONTENT_HEIGHT = 110  -- высота контента (40 + 6 + 48 + padding)
+    local isExpanded = false
+    
+    local function expand()
+        if isExpanded then return end
+        isExpanded = true
+        TweenService:Create(SBMain, HoverInfo, {Size = UDim2.new(1, -6, 0, 38 + CONTENT_HEIGHT)}):Play()
+        TweenService:Create(SBContent, HoverInfo, {Position = UDim2.new(0, 0, 1, -CONTENT_HEIGHT)}):Play()
+        TweenService:Create(SBSwitch, HoverInfo, {BackgroundColor3 = Theme.Lavender}):Play()
+        TweenService:Create(SBCircle, HoverInfo, {Position = UDim2.new(1, -17, 0.5, -7)}):Play()
+        SBLabel.TextColor3 = Theme.Text
+    end
+    
+    local function collapse()
+        if not isExpanded then return end
+        isExpanded = false
+        TweenService:Create(SBMain, HoverInfo, {Size = UDim2.new(1, -6, 0, 38)}):Play()
+        TweenService:Create(SBContent, HoverInfo, {Position = UDim2.new(0, 0, 1, 0)}):Play()
+        TweenService:Create(SBSwitch, HoverInfo, {BackgroundColor3 = Color3.fromRGB(60, 60, 70)}):Play()
+        TweenService:Create(SBCircle, HoverInfo, {Position = UDim2.new(0, 3, 0.5, -7)}):Play()
+        SBLabel.TextColor3 = Theme.TextDark
+    end
+    
+    SBSwitch.MouseButton1Click:Connect(function()
+        speedBoostEnabled = not speedBoostEnabled
+        Settings.SpeedBoost = speedBoostEnabled
+        
+        if speedBoostEnabled then
+            expand()
+            setupBoostConnections()
+            if Ctx.Notify then
+                Ctx.Notify("Speed Boost", "Включено", 2, "success")
+            end
+        else
+            collapse()
+            if speedBoostConn then speedBoostConn:Disconnect(); speedBoostConn = nil end
+            if inputEndedConn then inputEndedConn:Disconnect(); inputEndedConn = nil end
+            isBoosting = false
+            if Ctx.Notify then
+                Ctx.Notify("Speed Boost", "Выключено", 2, "info")
+            end
+        end
+    end)
+    
     -- Основная логика Speed Boost
     local function setupBoostConnections()
         if speedBoostConn then speedBoostConn:Disconnect() end
         if inputEndedConn then inputEndedConn:Disconnect() end
-
+        
         speedBoostConn = UserInputService.InputBegan:Connect(function(input)
             if input.KeyCode == boostKey and speedBoostEnabled and not isBoosting then
                 isBoosting = true
@@ -832,7 +977,7 @@ do
                 end
             end
         end)
-
+        
         inputEndedConn = UserInputService.InputEnded:Connect(function(input)
             if input.KeyCode == boostKey and isBoosting then
                 isBoosting = false
@@ -844,18 +989,6 @@ do
             end
         end)
     end
-
-    CreateToggle(MovementTab, "Speed Boost on Key", function(state)
-        speedBoostEnabled = state
-        Settings.SpeedBoost = state
-        if state then
-            setupBoostConnections()
-        else
-            if speedBoostConn then speedBoostConn:Disconnect(); speedBoostConn = nil end
-            if inputEndedConn then inputEndedConn:Disconnect(); inputEndedConn = nil end
-            isBoosting = false
-        end
-    end)
 end
 
 -- Vehicle Fly

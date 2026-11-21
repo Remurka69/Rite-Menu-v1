@@ -628,7 +628,7 @@ do
         end
     end)
     CreateSlider(VisualsTab, "Freecam Speed", 10, 200, 50, function(v) Settings.FreecamSpeed = v end)
-    CreateSlider(VisualsTab, "FOV", 70, 120, 70, function(v) camera.FieldOfView = v end)
+    CreateSlider(VisualsTab, "FOV", 10, 280, 70, function(v) camera.FieldOfView = v end)
 end
 
 -- No Camera Bob

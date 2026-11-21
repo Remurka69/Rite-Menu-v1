@@ -38,7 +38,7 @@ local Ctx = {
     FontDesc = Enum.Font.SourceSansBold,
     HoverInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
     SlideInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-   Settings = {
+Settings = {
     WalkSpeed = 16, JumpPower = 50, SpeedHackEnabled = false, JumpHackEnabled = false,
     InfJump = false, InfZoom = false, Noclip = false, FreezeSelf = false,
     NightVision = false, Aimbot = false,

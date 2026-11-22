@@ -733,12 +733,12 @@ do
             if longJumpConn then longJumpConn:Disconnect(); longJumpConn = nil end
         end
     end)
-    CreateSlider(MovementTab, "Long Jump Force", 50, 2000, 150, function(v)
+    CreateSlider(MovementTab, "Long Jump Force", 50, 300, 150, function(v)
         longJumpForce = v / 10
     end)
 end
 
--- Speed Boost on Key (раскрывающийся)
+-- Speed Boost on Key (раскрывающийся, тумблер не улетает)
 do
     local speedBoostConn = nil
     local inputEndedConn = nil
@@ -751,9 +751,8 @@ do
     local activeSpeedSlider = nil
 
     local HEADER_H = 38
-    local BODY_H = 94 -- 40 (keybind) + 6 (padding) + 48 (slider)
+    local BODY_H = 94
 
-    -- Главный контейнер (одна плашка, которая будет расширяться)
     local Container = Instance.new("Frame")
     Container.Size = UDim2.new(1, -6, 0, HEADER_H)
     Container.BackgroundColor3 = Theme.ElementBg
@@ -761,7 +760,6 @@ do
     Container.Parent = MovementTab
     Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 6)
 
-    -- Шапка (Label + тумблер)
     local Label = Instance.new("TextLabel", Container)
     Label.Size = UDim2.new(1, -60, 1, 0)
     Label.Position = UDim2.new(0, 12, 0, 0)
@@ -772,7 +770,6 @@ do
     Label.TextSize = 13
     Label.TextXAlignment = Enum.TextXAlignment.Left
 
-    -- Тумблер (всегда в шапке, никуда не улетает)
     local Switch = Instance.new("TextButton", Container)
     Switch.Size = UDim2.new(0, 36, 0, 20)
     Switch.Position = UDim2.new(1, -48, 0.5, -10)
@@ -788,7 +785,6 @@ do
     Circle.ZIndex = 11
     Instance.new("UICorner", Circle).CornerRadius = UDim.new(1, 0)
 
-    -- Тело (скрытое, выезжает снизу)
     local Body = Instance.new("Frame", Container)
     Body.Size = UDim2.new(1, 0, 0, 0)
     Body.Position = UDim2.new(0, 0, 0, HEADER_H)
@@ -796,7 +792,6 @@ do
     Body.Visible = false
     Body.ZIndex = 1
 
-    -- Выбор клавиши
     local KeybindFrame = Instance.new("Frame", Body)
     KeybindFrame.Size = UDim2.new(1, -12, 0, 40)
     KeybindFrame.Position = UDim2.new(0, 6, 0, 6)
@@ -851,7 +846,6 @@ do
         end)
     end)
 
-    -- Ползунок скорости (внутри Body)
     local SliderFrame = Instance.new("Frame", Body)
     SliderFrame.Size = UDim2.new(1, -12, 0, 48)
     SliderFrame.Position = UDim2.new(0, 6, 0, 52)
@@ -900,7 +894,6 @@ do
         end
     end)
 
-    -- Анимация раскрытия/сворачивания
     local function setExpanded(expanded)
         if expanded then
             Body.Visible = true
@@ -916,7 +909,6 @@ do
         end
     end
 
-    -- Логика буста
     local function setupBoostConnections()
         if speedBoostConn then speedBoostConn:Disconnect() end
         if inputEndedConn then inputEndedConn:Disconnect() end
@@ -941,7 +933,6 @@ do
         end)
     end
 
-    -- Клик по тумблеру
     Switch.MouseButton1Click:Connect(function()
         speedBoostEnabled = not speedBoostEnabled
         Settings.SpeedBoost = speedBoostEnabled
@@ -964,7 +955,7 @@ do
         end
     end)
 end
-    
+
 -- Vehicle Fly
 do
     local vehicleFlyConn = nil

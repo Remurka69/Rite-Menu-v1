@@ -5,6 +5,7 @@ local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
+local GuiService = game:GetService("GuiService")
 local Ctx = {
 Services = {
 UserInputService = UserInputService,
@@ -78,57 +79,82 @@ local function makeDraggable(guiObject)
     local dragging = false
     local dragStart = nil
     local startPos = nil
+    local holdTimer = nil
+    local holdStartPos = nil
     
-    local function startDrag(input, obj)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            -- Не начинаем перетаскивание, если элемент интерактивный
-            if obj:IsA("TextButton") or obj:IsA("ScrollingFrame") or obj:IsA("TextBox") then
-                return
+    local function isOverGui(pos)
+        local absPos = guiObject.AbsolutePosition
+        local absSize = guiObject.AbsoluteSize
+        return pos.X >= absPos.X and pos.X <= absPos.X + absSize.X and
+               pos.Y >= absPos.Y and pos.Y <= absPos.Y + absSize.Y
+    end
+    
+    local function isOverInteractive(pos)
+        local ok, objects = pcall(function()
+            return GuiService:GetGuiObjectsAtPosition(pos.X, pos.Y)
+        end)
+        if ok and objects then
+            for _, obj in ipairs(objects) do
+                if obj:IsA("TextButton") or obj:IsA("TextBox") then
+                    return true
+                end
             end
-            dragging = true
-            dragStart = input.Position
-            startPos = guiObject.Position
         end
+        return false
     end
     
-    local function stopDrag(input)
+    UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
+            local pos = input.Position
+            if isOverGui(pos) and not isOverInteractive(pos) then
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    -- ПК: сразу перетаскиваем
+                    dragging = true
+                    dragStart = pos
+                    startPos = guiObject.Position
+                else
+                    -- Телефон: long press 0.2 сек
+                    holdStartPos = pos
+                    if holdTimer then task.cancel(holdTimer) end
+                    holdTimer = task.delay(0.2, function()
+                        if holdStartPos then
+                            dragging = true
+                            dragStart = holdStartPos
+                            startPos = guiObject.Position
+                        end
+                    end)
+                end
+            end
         end
-    end
+    end)
     
-    -- Добавляем обработчики на сам фрейм и всех его потомков
-    local function addHandlers(obj)
-        if obj:IsA("GuiObject") then
-            obj.InputBegan:Connect(function(input)
-                startDrag(input, obj)
-            end)
-            obj.InputEnded:Connect(stopDrag)
-        end
-    end
-    
-    addHandlers(guiObject)
-    for _, descendant in ipairs(guiObject:GetDescendants()) do
-        addHandlers(descendant)
-    end
-    
-    -- Обработчик для новых потомков
-    guiObject.DescendantAdded:Connect(addHandlers)
-    
-    -- Глобальный обработчик движения
     UserInputService.InputChanged:Connect(function(input)
+        -- Если палец сдвинулся больше 5px до срабатывания таймера — это скролл, отменяем
+        if holdStartPos and input.UserInputType == Enum.UserInputType.Touch then
+            if (input.Position - holdStartPos).Magnitude > 5 then
+                holdStartPos = nil
+                if holdTimer then task.cancel(holdTimer) end
+            end
+        end
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
             guiObject.Position = UDim2.new(
-                startPos.X.Scale, 
-                startPos.X.Offset + delta.X, 
-                startPos.Y.Scale, 
-                startPos.Y.Offset + delta.Y
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
             )
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+            holdStartPos = nil
+            if holdTimer then task.cancel(holdTimer) end
         end
     end)
 end
 makeDraggable(MainFrame)
+
 local function makeScrollable(scrollFrame, uiListLayout)
 local function update()
 scrollFrame.CanvasSize = UDim2.new(0, 0, 0, uiListLayout.AbsoluteContentSize.Y + 15)

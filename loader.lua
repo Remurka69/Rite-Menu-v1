@@ -8,50 +8,50 @@ local Lighting = game:GetService("Lighting")
 local GuiService = game:GetService("GuiService")
 
 local Ctx = {
-    Services = {
-        UserInputService = UserInputService,
-        TweenService = TweenService,
-        Players = Players,
-        RunService = RunService,
-        TeleportService = TeleportService,
-        HttpService = HttpService,
-        Lighting = Lighting,
-    },
-    Player = Players.LocalPlayer,
-    Camera = workspace.CurrentCamera,
-    Language = "ru",
-    UIStrings = {
-        ru = { Enabled = "Включено", Disabled = "Выключено", InfoTitle = "INFO - Выберите категорию" },
-        en = { Enabled = "Enabled", Disabled = "Disabled", InfoTitle = "INFO - Select a category" }
-    },
-    Theme = {
-        MainBg = Color3.fromRGB(24, 24, 28),
-        SidebarBg = Color3.fromRGB(32, 32, 38),
-        Lavender = Color3.fromRGB(155, 130, 240),
-        LavenderGlow = Color3.fromRGB(180, 160, 255),
-        Text = Color3.fromRGB(255, 255, 255),
-        TextDark = Color3.fromRGB(150, 150, 160),
-        TabActive = Color3.fromRGB(58, 58, 68),
-        CloseRed = Color3.fromRGB(230, 75, 75),
-        ElementBg = Color3.fromRGB(38, 38, 45)
-    },
-    FontMain = Enum.Font.GothamBold,
-    FontDesc = Enum.Font.SourceSansBold,
-    HoverInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-    SlideInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-    Settings = {
-        WalkSpeed = 16, JumpPower = 50, SpeedHackEnabled = false, JumpHackEnabled = false,
-        InfJump = false, InfZoom = false, Noclip = false, FreezeSelf = false,
-        NightVision = false, Aimbot = false,
-        Spinbot = false, Freecam = false, FreecamSpeed = 50, FreecamMouseSensitivity = 0.002,
-        ESP = false, Tracers = false, TracerStyle = "Center", Chams = false, ChamStyle = "Skeleton",
-        LongJump = false, VehicleFly = false, WaterWalk = false,
-        NoCameraBob = false, NoGrass = false, SpeedBoost = false
-    },
-    Notify = nil,
-    Tabs = {},
-    UI = {},
-    Gui = {}
+Services = {
+UserInputService = UserInputService,
+TweenService = TweenService,
+Players = Players,
+RunService = RunService,
+TeleportService = TeleportService,
+HttpService = HttpService,
+Lighting = Lighting,
+},
+Player = Players.LocalPlayer,
+Camera = workspace.CurrentCamera,
+Language = "ru",
+UIStrings = {
+ru = { Enabled = "Включено", Disabled = "Выключено", InfoTitle = "INFO - Выберите категорию" },
+en = { Enabled = "Enabled", Disabled = "Disabled", InfoTitle = "INFO - Select a category" }
+},
+Theme = {
+MainBg = Color3.fromRGB(24, 24, 28),
+SidebarBg = Color3.fromRGB(32, 32, 38),
+Lavender = Color3.fromRGB(155, 130, 240),
+LavenderGlow = Color3.fromRGB(180, 160, 255),
+Text = Color3.fromRGB(255, 255, 255),
+TextDark = Color3.fromRGB(150, 150, 160),
+TabActive = Color3.fromRGB(58, 58, 68),
+CloseRed = Color3.fromRGB(230, 75, 75),
+ElementBg = Color3.fromRGB(38, 38, 45)
+},
+FontMain = Enum.Font.GothamBold,
+FontDesc = Enum.Font.SourceSansBold,
+HoverInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+SlideInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+Settings = {
+WalkSpeed = 16, JumpPower = 50, SpeedHackEnabled = false, JumpHackEnabled = false,
+InfJump = false, InfZoom = false, Noclip = false, FreezeSelf = false,
+NightVision = false, Aimbot = false,
+Spinbot = false, Freecam = false, FreecamSpeed = 50, FreecamMouseSensitivity = 0.002,
+ESP = false, Tracers = false, TracerStyle = "Center", Chams = false, ChamStyle = "Skeleton",
+LongJump = false, WaterWalk = false,
+NoCameraBob = false, NoGrass = false, SpeedBoost = false
+},
+Notify = nil,
+Tabs = {},
+UI = {},
+Gui = {}
 }
 
 local Theme = Ctx.Theme
@@ -81,100 +81,84 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
-------------------------------------------------------------------
--- ДРАГ: работает за любое место меню, включая список функций.
--- На телефоне: касание и удержание 0.3 сек = перетаскивание,
--- касание и движение сразу = скролл (конфликта нет).
-------------------------------------------------------------------
+-- Исправленная makeDraggable: работает на телефоне при зажатии в любом месте, не мешает скроллу
 local function makeDraggable(guiObject)
     local dragging = false
     local dragStart = nil
     local startPos = nil
     local holdActive = false
     local holdStartPos = nil
-    local disabledScroll = nil
-
-    local TOUCH_HOLD = 0.3
-    local MOVE_THRESHOLD = 10
-
+    
     local function isInteractive(obj)
-        return obj:IsA("TextButton") or obj:IsA("TextBox")
+        return obj:IsA("TextButton") or obj:IsA("TextBox") or obj:IsA("ScrollingFrame")
     end
-
-    local function findScrollAncestor(objectsAtPos)
-        for _, obj in ipairs(objectsAtPos) do
-            if obj:IsA("ScrollingFrame") then return obj end
-        end
-        return nil
-    end
-
+    
     UserInputService.InputBegan:Connect(function(input)
-        if input.UserInputType ~= Enum.UserInputType.MouseButton1 and
-           input.UserInputType ~= Enum.UserInputType.Touch then return end
-
-        local pos = input.Position
-        local objectsAtPos = GuiService:GetGuiObjectsAtPosition(pos.X, pos.Y)
-
-        local overTarget, overInteractive = false, false
-        for _, obj in ipairs(objectsAtPos) do
-            if obj == guiObject or obj:IsDescendantOf(guiObject) then overTarget = true end
-            if isInteractive(obj) then overInteractive = true end
-        end
-        if not overTarget or overInteractive then return end
-
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            -- ПК: тащим сразу
-            dragging = true
-            dragStart = pos
-            startPos = guiObject.Position
-        else
-            -- Телефон: ждём 0.3 сек, чтобы отличить от скролла
-            holdActive = true
-            holdStartPos = pos
-            local scrollFrame = findScrollAncestor(objectsAtPos)
-            task.delay(TOUCH_HOLD, function()
-                if holdActive then
-                    dragging = true
-                    dragStart = holdStartPos
-                    startPos = guiObject.Position
-                    holdActive = false
-                    if scrollFrame then
-                        disabledScroll = scrollFrame
-                        scrollFrame.ScrollingEnabled = false
-                    end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            local pos = input.Position
+            local objectsAtPos = GuiService:GetGuiObjectsAtPosition(pos.X, pos.Y)
+            
+            local overTarget = false
+            local overInteractive = false
+            
+            for _, obj in ipairs(objectsAtPos) do
+                if obj == guiObject or obj:IsDescendantOf(guiObject) then
+                    overTarget = true
                 end
-            end)
+                if isInteractive(obj) then
+                    overInteractive = true
+                end
+            end
+            
+            if overTarget and not overInteractive then
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    -- На ПК — сразу начинаем перетаскивание
+                    dragging = true
+                    dragStart = pos
+                    startPos = guiObject.Position
+                else
+                    -- На телефоне — с задержкой, чтобы не конфликтовать со скроллом
+                    holdActive = true
+                    holdStartPos = pos
+                    task.spawn(function()
+                        task.wait(0.2)
+                        if holdActive and holdStartPos and (input.Position - holdStartPos).Magnitude < 10 then
+                            dragging = true
+                            dragStart = input.Position
+                            startPos = guiObject.Position
+                        end
+                    end)
+                end
+            end
         end
     end)
-
+    
     UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or
-           input.UserInputType == Enum.UserInputType.Touch then
-            if holdActive and holdStartPos and (input.Position - holdStartPos).Magnitude > MOVE_THRESHOLD then
-                holdActive = false -- палец сразу двинулся = это скролл
-            end
-            if dragging then
-                local delta = input.Position - dragStart
-                guiObject.Position = UDim2.new(
-                    startPos.X.Scale, startPos.X.Offset + delta.X,
-                    startPos.Y.Scale, startPos.Y.Offset + delta.Y
-                )
-            end
+        if holdActive and holdStartPos and (input.Position - holdStartPos).Magnitude > 10 then
+            holdActive = false
+            holdStartPos = nil
+        end
+        
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            guiObject.Position = UDim2.new(
+                startPos.X.Scale, 
+                startPos.X.Offset + delta.X, 
+                startPos.Y.Scale, 
+                startPos.Y.Offset + delta.Y
+            )
         end
     end)
-
+    
     UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or
-           input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = false
             holdActive = false
-            if disabledScroll then
-                disabledScroll.ScrollingEnabled = true
-                disabledScroll = nil
-            end
+            holdStartPos = nil
         end
     end)
 end
+
 makeDraggable(MainFrame)
 
 local function makeScrollable(scrollFrame, uiListLayout)
@@ -533,13 +517,13 @@ local function CreateSlider(page, text, min, max, default, callback)
 end
 
 local function CreateDropdown(page, text, options, default, callback)
-    local DropFrame = Instance.new("Frame")
-    DropFrame.Size = UDim2.new(1, -6, 0, 40)
-    DropFrame.BackgroundColor3 = Theme.ElementBg
-    DropFrame.Parent = page
-    DropFrame.ClipsDescendants = true
-    Instance.new("UICorner", DropFrame).CornerRadius = UDim.new(0, 6)
-    local Label = Instance.new("TextLabel", DropFrame)
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Size = UDim2.new(1, -6, 0, 40)
+    MainFrame.BackgroundColor3 = Theme.ElementBg
+    MainFrame.Parent = page
+    MainFrame.ClipsDescendants = true
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
+    local Label = Instance.new("TextLabel", MainFrame)
     Label.Size = UDim2.new(0.6, -10, 0, 20)
     Label.Position = UDim2.new(0, 10, 0, 4)
     Label.BackgroundTransparency = 1
@@ -548,7 +532,7 @@ local function CreateDropdown(page, text, options, default, callback)
     Label.Font = FontMain
     Label.TextSize = 12
     Label.TextXAlignment = Enum.TextXAlignment.Left
-    local ValueLabel = Instance.new("TextLabel", DropFrame)
+    local ValueLabel = Instance.new("TextLabel", MainFrame)
     ValueLabel.Size = UDim2.new(0.4, -40, 0, 24)
     ValueLabel.Position = UDim2.new(0.6, 0, 0, 8)
     ValueLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
@@ -557,7 +541,7 @@ local function CreateDropdown(page, text, options, default, callback)
     ValueLabel.Font = FontMain
     ValueLabel.TextSize = 11
     Instance.new("UICorner", ValueLabel).CornerRadius = UDim.new(0, 4)
-    local OptionsBtn = Instance.new("TextButton", DropFrame)
+    local OptionsBtn = Instance.new("TextButton", MainFrame)
     OptionsBtn.Size = UDim2.new(0, 30, 0, 24)
     OptionsBtn.Position = UDim2.new(1, -36, 0, 8)
     OptionsBtn.BackgroundColor3 = Theme.Lavender
@@ -566,7 +550,7 @@ local function CreateDropdown(page, text, options, default, callback)
     OptionsBtn.Font = FontMain
     OptionsBtn.TextSize = 10
     Instance.new("UICorner", OptionsBtn).CornerRadius = UDim.new(0, 4)
-    local DropList = Instance.new("Frame", DropFrame)
+    local DropList = Instance.new("Frame", MainFrame)
     DropList.Size = UDim2.new(1, -20, 0, 0)
     DropList.Position = UDim2.new(0, 10, 0, 40)
     DropList.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
@@ -580,11 +564,11 @@ local function CreateDropdown(page, text, options, default, callback)
     OptionsBtn.MouseButton1Click:Connect(function()
         isOpen = not isOpen
         if isOpen then
-            TweenService:Create(DropFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40 + totalListHeight)}):Play()
+            TweenService:Create(MainFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40 + totalListHeight)}):Play()
             TweenService:Create(DropList, HoverInfo, {Size = UDim2.new(1, -20, 0, totalListHeight)}):Play()
             OptionsBtn.Text = "▲"
         else
-            TweenService:Create(DropFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40)}):Play()
+            TweenService:Create(MainFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40)}):Play()
             TweenService:Create(DropList, HoverInfo, {Size = UDim2.new(1, -20, 0, 0)}):Play()
             OptionsBtn.Text = "▼"
         end
@@ -603,23 +587,23 @@ local function CreateDropdown(page, text, options, default, callback)
         OptBtn.MouseButton1Click:Connect(function()
             ValueLabel.Text = opt
             isOpen = false
-            TweenService:Create(DropFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40)}):Play()
+            TweenService:Create(MainFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40)}):Play()
             TweenService:Create(DropList, HoverInfo, {Size = UDim2.new(1, -20, 0, 0)}):Play()
             OptionsBtn.Text = "▼"
             pcall(callback, opt)
         end)
     end
-    return DropFrame
+    return MainFrame
 end
 
 local function CreatePlayerListDropdown(page, text, onSelectCallback)
-    local DropFrame = Instance.new("Frame")
-    DropFrame.Size = UDim2.new(1, -6, 0, 40)
-    DropFrame.BackgroundColor3 = Theme.ElementBg
-    DropFrame.Parent = page
-    DropFrame.ClipsDescendants = true
-    Instance.new("UICorner", DropFrame).CornerRadius = UDim.new(0, 6)
-    local Label = Instance.new("TextLabel", DropFrame)
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Size = UDim2.new(1, -6, 0, 40)
+    MainFrame.BackgroundColor3 = Theme.ElementBg
+    MainFrame.Parent = page
+    MainFrame.ClipsDescendants = true
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
+    local Label = Instance.new("TextLabel", MainFrame)
     Label.Size = UDim2.new(0.6, -10, 0, 20)
     Label.Position = UDim2.new(0, 10, 0, 4)
     Label.BackgroundTransparency = 1
@@ -628,7 +612,7 @@ local function CreatePlayerListDropdown(page, text, onSelectCallback)
     Label.Font = FontMain
     Label.TextSize = 12
     Label.TextXAlignment = Enum.TextXAlignment.Left
-    local ValueLabel = Instance.new("TextLabel", DropFrame)
+    local ValueLabel = Instance.new("TextLabel", MainFrame)
     ValueLabel.Size = UDim2.new(0.4, -40, 0, 24)
     ValueLabel.Position = UDim2.new(0.6, 0, 0, 8)
     ValueLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
@@ -637,7 +621,7 @@ local function CreatePlayerListDropdown(page, text, onSelectCallback)
     ValueLabel.Font = FontMain
     ValueLabel.TextSize = 11
     Instance.new("UICorner", ValueLabel).CornerRadius = UDim.new(0, 4)
-    local OptionsBtn = Instance.new("TextButton", DropFrame)
+    local OptionsBtn = Instance.new("TextButton", MainFrame)
     OptionsBtn.Size = UDim2.new(0, 30, 0, 24)
     OptionsBtn.Position = UDim2.new(1, -36, 0, 8)
     OptionsBtn.BackgroundColor3 = Theme.Lavender
@@ -646,7 +630,7 @@ local function CreatePlayerListDropdown(page, text, onSelectCallback)
     OptionsBtn.Font = FontMain
     OptionsBtn.TextSize = 10
     Instance.new("UICorner", OptionsBtn).CornerRadius = UDim.new(0, 4)
-    local DropList = Instance.new("Frame", DropFrame)
+    local DropList = Instance.new("Frame", MainFrame)
     DropList.Size = UDim2.new(1, -20, 0, 0)
     DropList.Position = UDim2.new(0, 10, 0, 40)
     DropList.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
@@ -679,14 +663,14 @@ local function CreatePlayerListDropdown(page, text, onSelectCallback)
             OptBtn.MouseButton1Click:Connect(function()
                 ValueLabel.Text = opt
                 isOpen = false
-                TweenService:Create(DropFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40)}):Play()
+                TweenService:Create(MainFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40)}):Play()
                 TweenService:Create(DropList, HoverInfo, {Size = UDim2.new(1, -20, 0, 0)}):Play()
                 OptionsBtn.Text = "▼"
                 if onSelectCallback then onSelectCallback(opt) end
             end)
         end
         if isOpen then
-            TweenService:Create(DropFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40 + totalListHeight)}):Play()
+            TweenService:Create(MainFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40 + totalListHeight)}):Play()
             TweenService:Create(DropList, HoverInfo, {Size = UDim2.new(1, -20, 0, totalListHeight)}):Play()
         end
     end
@@ -696,11 +680,11 @@ local function CreatePlayerListDropdown(page, text, onSelectCallback)
         for _, p in ipairs(Players:GetPlayers()) do if p ~= player then count = count + 1 end end
         local totalListHeight = (count * optionHeight) + ((count - 1) * 2) + 4
         if isOpen then
-            TweenService:Create(DropFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40 + totalListHeight)}):Play()
+            TweenService:Create(MainFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40 + totalListHeight)}):Play()
             TweenService:Create(DropList, HoverInfo, {Size = UDim2.new(1, -20, 0, totalListHeight)}):Play()
             OptionsBtn.Text = "▲"
         else
-            TweenService:Create(DropFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40)}):Play()
+            TweenService:Create(MainFrame, HoverInfo, {Size = UDim2.new(1, -6, 0, 40)}):Play()
             TweenService:Create(DropList, HoverInfo, {Size = UDim2.new(1, -20, 0, 0)}):Play()
             OptionsBtn.Text = "▼"
         end
@@ -708,7 +692,7 @@ local function CreatePlayerListDropdown(page, text, onSelectCallback)
     UpdatePlayerList()
     Players.PlayerAdded:Connect(UpdatePlayerList)
     Players.PlayerRemoving:Connect(UpdatePlayerList)
-    return DropFrame
+    return MainFrame
 end
 
 local function CreateTextBox(page, text, placeholder, default, callback)
@@ -797,7 +781,7 @@ do
     InfoPage.Parent = Container
     Ctx.Tabs["Info"] = {Name = "Info", Button = InfoBtn, Page = InfoPage}
     InfoBtn.MouseButton1Click:Connect(function() SwitchToTab("Info") end)
-
+    
     local CategoriesData = {
         Combat = {
             name = "Combat", icon = "⚔️", description = "Функции для боя и PvP",
@@ -822,9 +806,10 @@ do
                 {name = "Teleport to Player", desc = "Телепорт к игроку по нику"},
                 {name = "Teleport to Mouse", desc = "Телепорт по клику мыши"},
                 {name = "Invisible platform", desc = "Создает невидимую платформу под ногами, чтобы не упасть в бездну"},
-                {name = "Long Jump", desc = "Дальний прыжок с настраиваемой силой"},
-                {name = "Speed Boost on Key", desc = "Рывок скорости по нажатии выбранной клавиши"},
-                {name = "Water Walk", desc = "Ходьба по воде"}
+                {name = "Long Jump", desc = "Длинный прыжок с настраиваемой силой"},
+                {name = "Speed Boost on Key", desc = "Ускорение по нажатию клавиши"},
+                {name = "Water Walk", desc = "Ходьба по воде"},
+                {name = "Vehicle Fly", desc = "Полёт на транспорте"}
             }
         },
         Player = {
@@ -847,9 +832,9 @@ do
                 {name = "Freecam", desc = "Свободная камера с управлением"},
                 {name = "Crosshair", desc = "Прицел в центре экрана"},
                 {name = "Fullbright", desc = "Делает мир максимально ярким и убирает тени"},
-                {name = "Disable Fog", desc = "Убирает туман, при выключении возвращает оригинальные настройки карты"},
+                {name = "Disable Fog", desc = "Убирает туман"},
                 {name = "No Camera Bob", desc = "Убирает тряску камеры при ходьбе"},
-                {name = "No Grass", desc = "Удаляет траву на карте"}
+                {name = "No Grass", desc = "Удаление травы"}
             }
         },
         World = {
@@ -877,7 +862,7 @@ do
             }
         }
     }
-
+    
     local Translations = {
         Combat = {
             description = "Combat functions and PvP",
@@ -900,8 +885,9 @@ do
             ["Teleport to Mouse"] = "Teleport to mouse click location",
             ["Invisible platform"] = "Creates an invisible platform under your feet to prevent falling into the void",
             ["Long Jump"] = "Long jump with adjustable force",
-            ["Speed Boost on Key"] = "Speed dash on a chosen key press",
-            ["Water Walk"] = "Walk on water"
+            ["Speed Boost on Key"] = "Speed boost on key press",
+            ["Water Walk"] = "Walk on water",
+            ["Vehicle Fly"] = "Fly on vehicles"
         },
         Player = {
             description = "Character settings",
@@ -920,9 +906,9 @@ do
             ["Freecam"] = "Free camera with controls",
             ["Crosshair"] = "Crosshair in the center of the screen",
             ["Fullbright"] = "Makes the world fully bright and removes shadows",
-            ["Disable Fog"] = "Removes fog, restores original map settings when turned off",
+            ["Disable Fog"] = "Removes fog",
             ["No Camera Bob"] = "Removes camera shake while walking",
-            ["No Grass"] = "Removes grass from the map"
+            ["No Grass"] = "Removes grass"
         },
         World = {
             description = "World settings",
@@ -945,7 +931,7 @@ do
             ["Copy My Coordinates"] = "Copy your coordinates to clipboard"
         }
     }
-
+    
     local FoldersView = Instance.new("Frame", InfoPage)
     FoldersView.Size = UDim2.new(1, 0, 1, 0)
     FoldersView.BackgroundTransparency = 1
@@ -953,7 +939,7 @@ do
     CategoryView.Size = UDim2.new(1, 0, 1, 0)
     CategoryView.BackgroundTransparency = 1
     CategoryView.Visible = false
-
+    
     local InfoTitle = Instance.new("TextLabel", FoldersView)
     InfoTitle.Size = UDim2.new(1, 0, 0, 40)
     InfoTitle.Position = UDim2.new(0, 0, 0, 10)
@@ -963,7 +949,7 @@ do
     InfoTitle.Font = FontMain
     InfoTitle.TextSize = 16
     InfoTitle.TextXAlignment = Enum.TextXAlignment.Center
-
+    
     local FoldersContainer = Instance.new("Frame", FoldersView)
     FoldersContainer.Size = UDim2.new(1, -20, 1, -60)
     FoldersContainer.Position = UDim2.new(0, 10, 0, 60)
@@ -972,7 +958,7 @@ do
     FoldersLayout.Padding = UDim.new(0, 10)
     FoldersLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     FoldersLayout.SortOrder = Enum.SortOrder.LayoutOrder
-
+    
     local BackBtn = Instance.new("TextButton", CategoryView)
     BackBtn.Size = UDim2.new(0, 36, 0, 36)
     BackBtn.Position = UDim2.new(0, 10, 0, 10)
@@ -985,7 +971,7 @@ do
     BackBtn.MouseButton1Click:Connect(function() CategoryView.Visible = false; FoldersView.Visible = true end)
     BackBtn.MouseEnter:Connect(function() TweenService:Create(BackBtn, HoverInfo, {BackgroundColor3 = Theme.TabActive}):Play() end)
     BackBtn.MouseLeave:Connect(function() TweenService:Create(BackBtn, HoverInfo, {BackgroundColor3 = Theme.SidebarBg}):Play() end)
-
+    
     local CategoryTitle = Instance.new("TextLabel", CategoryView)
     CategoryTitle.Size = UDim2.new(1, -70, 0, 30)
     CategoryTitle.Position = UDim2.new(0, 60, 0, 13)
@@ -994,7 +980,7 @@ do
     CategoryTitle.Font = FontMain
     CategoryTitle.TextSize = 16
     CategoryTitle.TextXAlignment = Enum.TextXAlignment.Left
-
+    
     local CategoryDesc = Instance.new("TextLabel", CategoryView)
     CategoryDesc.Size = UDim2.new(1, -20, 0, 20)
     CategoryDesc.Position = UDim2.new(0, 10, 0, 45)
@@ -1003,7 +989,7 @@ do
     CategoryDesc.Font = FontDesc
     CategoryDesc.TextSize = 12
     CategoryDesc.TextXAlignment = Enum.TextXAlignment.Center
-
+    
     local FunctionsContainer = Instance.new("ScrollingFrame", CategoryView)
     FunctionsContainer.Size = UDim2.new(1, -20, 1, -80)
     FunctionsContainer.Position = UDim2.new(0, 10, 0, 70)
@@ -1016,7 +1002,7 @@ do
     FunctionsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     FunctionsLayout.SortOrder = Enum.SortOrder.LayoutOrder
     Instance.new("UIPadding", FunctionsContainer).PaddingBottom = UDim.new(0, 10)
-
+    
     local function OpenCategory(categoryKey)
         local data = CategoriesData[categoryKey]
         if not data then return end
@@ -1077,7 +1063,7 @@ do
         FunctionsContainer.CanvasSize = UDim2.new(0, 0, 0, FunctionsLayout.AbsoluteContentSize.Y + 20)
         FunctionsContainer.CanvasPosition = Vector2.new(0, 0)
     end
-
+    
     local function CreateFolder(categoryKey, categoryData)
         local FolderBtn = Instance.new("TextButton")
         FolderBtn.Size = UDim2.new(0, 200, 0, 50)
@@ -1114,11 +1100,12 @@ do
         FolderBtn.MouseButton1Click:Connect(function() OpenCategory(categoryKey) end)
         FolderBtn.Parent = FoldersContainer
     end
-
+    
     for _, key in ipairs({"Combat", "Movement", "Player", "Visuals", "World", "Misc"}) do
         if CategoriesData[key] then CreateFolder(key, CategoriesData[key]) end
     end
-
+    
+    -- Кнопка языка
     local LanguageBtn = Instance.new("TextButton")
     LanguageBtn.Size = UDim2.new(0, 200, 0, 50)
     LanguageBtn.BackgroundColor3 = Theme.ElementBg
@@ -1193,7 +1180,8 @@ do
         end
     end)
     LanguageBtn.Parent = FoldersContainer
-
+    
+    -- Кнопка контактов
     local ContactsBtn = Instance.new("TextButton")
     ContactsBtn.Size = UDim2.new(0, 200, 0, 50)
     ContactsBtn.BackgroundColor3 = Theme.Lavender
@@ -1241,6 +1229,18 @@ local PARTS = {
 local function getFreshCode(url)
     local sep = url:find("?", 1, true) and "&" or "?"
     return game:HttpGet(url .. sep .. "cb=" .. tostring(math.random(1, 1000000)) .. "_" .. tostring(os.clock()))
+end
+
+local function countElements()
+    local n = 0
+    for _, page in pairs(Ctx.Pages) do
+        for _, ch in ipairs(page:GetChildren()) do
+            if not ch:IsA("UIListLayout") and not ch:IsA("UIPadding") then
+                n += 1
+            end
+        end
+    end
+    return n
 end
 
 print("[Loader] Начинаю загрузку модулей...")

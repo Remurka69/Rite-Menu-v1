@@ -78,45 +78,59 @@ local function makeDraggable(guiObject)
     local dragging = false
     local dragStart = nil
     local startPos = nil
+    local holdActive = false
+    local holdStartPos = nil
     
-    local function startDrag(input, obj)
+    local function isInteractive(obj)
+        return obj:IsA("TextButton") or obj:IsA("TextBox")
+    end
+    
+    UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            -- Не начинаем перетаскивание, если элемент интерактивный
-            if obj:IsA("TextButton") or obj:IsA("ScrollingFrame") or obj:IsA("TextBox") then
-                return
+            local pos = input.Position
+            local objectsAtPos = game:GetService("GuiService"):GetGuiObjectsAtPosition(pos.X, pos.Y)
+            
+            local overTarget = false
+            local overInteractive = false
+            
+            for _, obj in ipairs(objectsAtPos) do
+                if obj == guiObject or obj:IsDescendantOf(guiObject) then
+                    overTarget = true
+                end
+                if isInteractive(obj) then
+                    overInteractive = true
+                end
             end
-            dragging = true
-            dragStart = input.Position
-            startPos = guiObject.Position
+            
+            if overTarget and not overInteractive then
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    -- На ПК — сразу начинаем перетаскивание
+                    dragging = true
+                    dragStart = pos
+                    startPos = guiObject.Position
+                else
+                    -- На телефоне — с задержкой, чтобы не конфликтовать со скроллом
+                    holdActive = true
+                    holdStartPos = pos
+                    task.spawn(function()
+                        task.wait(0.2)
+                        if holdActive and holdStartPos and (input.Position - holdStartPos).Magnitude < 10 then
+                            dragging = true
+                            dragStart = input.Position
+                            startPos = guiObject.Position
+                        end
+                    end)
+                end
+            end
         end
-    end
+    end)
     
-    local function stopDrag(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end
-    
-    -- Добавляем обработчики на сам фрейм и всех его потомков
-    local function addHandlers(obj)
-        if obj:IsA("GuiObject") then
-            obj.InputBegan:Connect(function(input)
-                startDrag(input, obj)
-            end)
-            obj.InputEnded:Connect(stopDrag)
-        end
-    end
-    
-    addHandlers(guiObject)
-    for _, descendant in ipairs(guiObject:GetDescendants()) do
-        addHandlers(descendant)
-    end
-    
-    -- Обработчик для новых потомков
-    guiObject.DescendantAdded:Connect(addHandlers)
-    
-    -- Глобальный обработчик движения
     UserInputService.InputChanged:Connect(function(input)
+        if holdActive and holdStartPos and (input.Position - holdStartPos).Magnitude > 10 then
+            holdActive = false
+            holdStartPos = nil
+        end
+        
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
             guiObject.Position = UDim2.new(
@@ -127,7 +141,16 @@ local function makeDraggable(guiObject)
             )
         end
     end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+            holdActive = false
+            holdStartPos = nil
+        end
+    end)
 end
+
 makeDraggable(MainFrame)
 local function makeScrollable(scrollFrame, uiListLayout)
 local function update()

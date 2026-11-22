@@ -81,48 +81,51 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
--- Исправленная makeDraggable: работает на телефоне при зажатии в любом месте, не мешает скроллу
 local function makeDraggable(guiObject)
     local dragging = false
     local dragStart = nil
     local startPos = nil
     local holdActive = false
     local holdStartPos = nil
+    local holdThread = nil
     
-    local function isInteractive(obj)
-        return obj:IsA("TextButton") or obj:IsA("TextBox") or obj:IsA("ScrollingFrame")
+    local function isOverInteractive(pos)
+        -- Проверяем, находится ли позиция над интерактивным элементом
+        local objects = GuiService:GetGuiObjectsAtPosition(pos.X, pos.Y)
+        for _, obj in ipairs(objects) do
+            if obj:IsA("TextButton") or obj:IsA("TextBox") or obj:IsA("ScrollingFrame") then
+                return true
+            end
+        end
+        return false
+    end
+    
+    local function isOverGuiObject(pos)
+        -- Проверяем, находится ли позиция внутри guiObject
+        local absPos = guiObject.AbsolutePosition
+        local absSize = guiObject.AbsoluteSize
+        return pos.X >= absPos.X and pos.X <= absPos.X + absSize.X and
+               pos.Y >= absPos.Y and pos.Y <= absPos.Y + absSize.Y
     end
     
     UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             local pos = input.Position
-            local objectsAtPos = GuiService:GetGuiObjectsAtPosition(pos.X, pos.Y)
             
-            local overTarget = false
-            local overInteractive = false
-            
-            for _, obj in ipairs(objectsAtPos) do
-                if obj == guiObject or obj:IsDescendantOf(guiObject) then
-                    overTarget = true
-                end
-                if isInteractive(obj) then
-                    overInteractive = true
-                end
-            end
-            
-            if overTarget and not overInteractive then
+            if isOverGuiObject(pos) and not isOverInteractive(pos) then
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     -- На ПК — сразу начинаем перетаскивание
                     dragging = true
                     dragStart = pos
                     startPos = guiObject.Position
                 else
-                    -- На телефоне — с задержкой, чтобы не конфликтовать со скроллом
+                    -- На телефоне — с задержкой
                     holdActive = true
                     holdStartPos = pos
-                    task.spawn(function()
+                    if holdThread then task.cancel(holdThread) end
+                    holdThread = task.spawn(function()
                         task.wait(0.2)
-                        if holdActive and holdStartPos and (input.Position - holdStartPos).Magnitude < 10 then
+                        if holdActive and holdStartPos then
                             dragging = true
                             dragStart = input.Position
                             startPos = guiObject.Position
@@ -137,6 +140,7 @@ local function makeDraggable(guiObject)
         if holdActive and holdStartPos and (input.Position - holdStartPos).Magnitude > 10 then
             holdActive = false
             holdStartPos = nil
+            if holdThread then task.cancel(holdThread) end
         end
         
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
@@ -155,10 +159,11 @@ local function makeDraggable(guiObject)
             dragging = false
             holdActive = false
             holdStartPos = nil
+            if holdThread then task.cancel(holdThread) end
         end
     end)
 end
-
+    
 makeDraggable(MainFrame)
 
 local function makeScrollable(scrollFrame, uiListLayout)
@@ -1276,5 +1281,5 @@ end
 print("[Loader] Все модули обработаны.")
 task.wait(0.5)
 if Ctx.Notify then
-    Ctx.Notify("Rite Cheat", "Меню загружено! Приятной Игры❤️.", 5, "success")
+    Ctx.Notify("Rite Cheat", "TEST1 Меню загружено! Приятной Игры❤️.", 5, "success")
 end

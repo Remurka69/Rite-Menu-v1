@@ -81,32 +81,53 @@ MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
 local function makeDraggable(guiObject)
-    local dragging, dragInput, dragStart, startPos
-    guiObject.InputBegan:Connect(function(input)
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+    
+    local function startDrag(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = guiObject.Position
         end
-    end)
-    guiObject.InputEnded:Connect(function(input)
+    end
+    
+    local function stopDrag(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = false
         end
-    end)
-    guiObject.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
+    end
+    
+    -- Добавляем обработчики на сам фрейм и всех его потомков
+    local function addHandlers(obj)
+        if obj:IsA("GuiObject") then
+            obj.InputBegan:Connect(startDrag)
+            obj.InputEnded:Connect(stopDrag)
         end
-    end)
+    end
+    
+    addHandlers(guiObject)
+    for _, descendant in ipairs(guiObject:GetDescendants()) do
+        addHandlers(descendant)
+    end
+    
+    -- Обработчик для новых потомков
+    guiObject.DescendantAdded:Connect(addHandlers)
+    
+    -- Глобальный обработчик движения
     UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
-            guiObject.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            guiObject.Position = UDim2.new(
+                startPos.X.Scale, 
+                startPos.X.Offset + delta.X, 
+                startPos.Y.Scale, 
+                startPos.Y.Offset + delta.Y
+            )
         end
     end)
 end
-makeDraggable(MainFrame)
 
 local function makeScrollable(scrollFrame, uiListLayout)
     local function update()

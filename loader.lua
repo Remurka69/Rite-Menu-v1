@@ -81,7 +81,6 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
--- РАБОЧАЯ makeDraggable для ПК и телефона
 local function makeDraggable(guiObject)
     local dragging = false
     local dragStart = nil
@@ -90,34 +89,28 @@ local function makeDraggable(guiObject)
     local holdActive = false
     local holdStartPos = nil
     
-    local function isOverGuiObject(pos)
+    -- Проверяем, находится ли точка внутри guiObject
+    local function isInside(pos)
         local absPos = guiObject.AbsolutePosition
         local absSize = guiObject.AbsoluteSize
         return pos.X >= absPos.X and pos.X <= absPos.X + absSize.X and
                pos.Y >= absPos.Y and pos.Y <= absPos.Y + absSize.Y
     end
     
-    local function isOverInteractive(pos)
-        local objects = GuiService:GetGuiObjectsAtPosition(pos.X, pos.Y)
-        for _, obj in ipairs(objects) do
-            if obj:IsA("TextButton") or obj:IsA("TextBox") or obj:IsA("ScrollingFrame") then
-                return true
-            end
-        end
-        return false
-    end
-    
-    UserInputService.InputBegan:Connect(function(input)
+    UserInputService.InputBegan:Connect(function(input, processed)
+        -- Если событие уже обработано UI элементом (кнопка, скролл, поле ввода) — не двигаем
+        if processed then return end
+        
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             local pos = input.Position
-            if isOverGuiObject(pos) and not isOverInteractive(pos) then
+            if isInside(pos) then
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    -- ПК: сразу перетаскиваем
+                    -- ПК: сразу начинаем перетаскивание
                     dragging = true
                     dragStart = pos
                     startPos = guiObject.Position
                 else
-                    -- Телефон: с задержкой 0.15 сек для различения скролла и перетаскивания
+                    -- Телефон: с задержкой 0.15 сек, чтобы отличить от скролла
                     holdActive = true
                     holdStartPos = pos
                     if holdThread then task.cancel(holdThread) end
@@ -135,11 +128,13 @@ local function makeDraggable(guiObject)
     end)
     
     UserInputService.InputChanged:Connect(function(input)
+        -- Если палец сдвинулся больше чем на 5px — отменяем задержку (это скролл)
         if holdActive and holdStartPos and (input.Position - holdStartPos).Magnitude > 5 then
             holdActive = false
             holdStartPos = nil
             if holdThread then task.cancel(holdThread) end
         end
+        -- Двигаем меню
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
             guiObject.Position = UDim2.new(
@@ -160,8 +155,6 @@ local function makeDraggable(guiObject)
         end
     end)
 end
-
-makeDraggable(MainFrame)
 
 local function makeScrollable(scrollFrame, uiListLayout)
     local function update()
@@ -1247,5 +1240,5 @@ end
 print("[Loader] Все модули обработаны.")
 task.wait(0.5)
 if Ctx.Notify then
-    Ctx.Notify("Rite Cheat", "11Меню загружено! Приятной Игры❤️.", 5, "success")
+    Ctx.Notify("Rite Cheat", "1Меню загружено! Приятной Игры❤️.", 5, "success")
 end

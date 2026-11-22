@@ -1276,5 +1276,5 @@ end
 print("[Loader] Все модули обработаны.")
 task.wait(0.5)
 if Ctx.Notify then
-    Ctx.Notify("Rite Cheat", "Меню загружено! Проверьте F9 на ошибки.", 5, "success")
+    Ctx.Notify("Rite Cheat", "Меню загружено! Приятной Игры❤️.", 5, "success")
 end

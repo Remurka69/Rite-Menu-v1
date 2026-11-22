@@ -81,16 +81,23 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
+-- РАБОЧАЯ makeDraggable для ПК и телефона
 local function makeDraggable(guiObject)
     local dragging = false
     local dragStart = nil
     local startPos = nil
+    local holdThread = nil
     local holdActive = false
     local holdStartPos = nil
-    local holdThread = nil
+    
+    local function isOverGuiObject(pos)
+        local absPos = guiObject.AbsolutePosition
+        local absSize = guiObject.AbsoluteSize
+        return pos.X >= absPos.X and pos.X <= absPos.X + absSize.X and
+               pos.Y >= absPos.Y and pos.Y <= absPos.Y + absSize.Y
+    end
     
     local function isOverInteractive(pos)
-        -- Проверяем, находится ли позиция над интерактивным элементом
         local objects = GuiService:GetGuiObjectsAtPosition(pos.X, pos.Y)
         for _, obj in ipairs(objects) do
             if obj:IsA("TextButton") or obj:IsA("TextBox") or obj:IsA("ScrollingFrame") then
@@ -100,34 +107,25 @@ local function makeDraggable(guiObject)
         return false
     end
     
-    local function isOverGuiObject(pos)
-        -- Проверяем, находится ли позиция внутри guiObject
-        local absPos = guiObject.AbsolutePosition
-        local absSize = guiObject.AbsoluteSize
-        return pos.X >= absPos.X and pos.X <= absPos.X + absSize.X and
-               pos.Y >= absPos.Y and pos.Y <= absPos.Y + absSize.Y
-    end
-    
     UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             local pos = input.Position
-            
             if isOverGuiObject(pos) and not isOverInteractive(pos) then
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    -- На ПК — сразу начинаем перетаскивание
+                    -- ПК: сразу перетаскиваем
                     dragging = true
                     dragStart = pos
                     startPos = guiObject.Position
                 else
-                    -- На телефоне — с задержкой
+                    -- Телефон: с задержкой 0.15 сек для различения скролла и перетаскивания
                     holdActive = true
                     holdStartPos = pos
                     if holdThread then task.cancel(holdThread) end
                     holdThread = task.spawn(function()
-                        task.wait(0.2)
+                        task.wait(0.15)
                         if holdActive and holdStartPos then
                             dragging = true
-                            dragStart = input.Position
+                            dragStart = holdStartPos
                             startPos = guiObject.Position
                         end
                     end)
@@ -137,12 +135,11 @@ local function makeDraggable(guiObject)
     end)
     
     UserInputService.InputChanged:Connect(function(input)
-        if holdActive and holdStartPos and (input.Position - holdStartPos).Magnitude > 10 then
+        if holdActive and holdStartPos and (input.Position - holdStartPos).Magnitude > 5 then
             holdActive = false
             holdStartPos = nil
             if holdThread then task.cancel(holdThread) end
         end
-        
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
             guiObject.Position = UDim2.new(
@@ -163,7 +160,7 @@ local function makeDraggable(guiObject)
         end
     end)
 end
-    
+
 makeDraggable(MainFrame)
 
 local function makeScrollable(scrollFrame, uiListLayout)
@@ -745,33 +742,33 @@ local function CreateTextBox(page, text, placeholder, default, callback)
 end
 
 Ctx.UI = {
-    CreateTab = CreateTab,
-    CreateSpecialTab = CreateSpecialTab,
-    CreateButton = CreateButton,
-    CreateToggle = CreateToggle,
-    CreateSlider = CreateSlider,
-    CreateDropdown = CreateDropdown,
-    CreatePlayerListDropdown = CreatePlayerListDropdown,
-    CreateTextBox = CreateTextBox,
+CreateTab = CreateTab,
+CreateSpecialTab = CreateSpecialTab,
+CreateButton = CreateButton,
+CreateToggle = CreateToggle,
+CreateSlider = CreateSlider,
+CreateDropdown = CreateDropdown,
+CreatePlayerListDropdown = CreatePlayerListDropdown,
+CreateTextBox = CreateTextBox,
 }
 
 Ctx.Pages = {
-    Combat = CreateTab("Combat"),
-    Movement = CreateTab("Movement"),
-    Player = CreateTab("Player"),
-    Visuals = CreateTab("Visuals"),
-    World = CreateTab("World"),
-    Misc = CreateTab("Misc"),
-    Settings = CreateSpecialTab("Settings", SettingsBtn),
+Combat = CreateTab("Combat"),
+Movement = CreateTab("Movement"),
+Player = CreateTab("Player"),
+Visuals = CreateTab("Visuals"),
+World = CreateTab("World"),
+Misc = CreateTab("Misc"),
+Settings = CreateSpecialTab("Settings", SettingsBtn),
 }
 
 Ctx.Gui = {
-    ScreenGui = ScreenGui,
-    MainFrame = MainFrame,
-    MainCorner = MainCorner,
-    Sidebar = Sidebar,
-    Container = Container,
-    OpenBtn = OpenBtn,
+ScreenGui = ScreenGui,
+MainFrame = MainFrame,
+MainCorner = MainCorner,
+Sidebar = Sidebar,
+Container = Container,
+OpenBtn = OpenBtn,
 }
 
 -- Вкладка Info
@@ -1110,7 +1107,6 @@ do
         if CategoriesData[key] then CreateFolder(key, CategoriesData[key]) end
     end
     
-    -- Кнопка языка
     local LanguageBtn = Instance.new("TextButton")
     LanguageBtn.Size = UDim2.new(0, 200, 0, 50)
     LanguageBtn.BackgroundColor3 = Theme.ElementBg
@@ -1154,39 +1150,9 @@ do
             if Ctx.Notify then Ctx.Notify("Language", "Язык изменён на Русский", 2, "success") end
         end
         InfoTitle.Text = Ctx.UIStrings[Ctx.Language].InfoTitle
-        if CategoryView.Visible then
-            local currentCategoryKey = nil
-            for key, data in pairs(CategoriesData) do
-                if CategoryTitle.Text:find(data.name:upper()) then
-                    currentCategoryKey = key
-                    break
-                end
-            end
-            if currentCategoryKey then
-                for i, funcFrame in ipairs(FunctionsContainer:GetChildren()) do
-                    if funcFrame:IsA("Frame") then
-                        local funcNameLabel = funcFrame:FindFirstChildOfClass("TextLabel")
-                        local funcData = CategoriesData[currentCategoryKey].functions[i]
-                        if funcNameLabel and funcData then
-                            local description = funcData.desc
-                            if Ctx.Language == "en" and Translations[currentCategoryKey] and Translations[currentCategoryKey][funcNameLabel.Text] then
-                                description = Translations[currentCategoryKey][funcNameLabel.Text]
-                            end
-                            for _, child in ipairs(funcFrame:GetChildren()) do
-                                if child:IsA("TextLabel") and child ~= funcNameLabel and child.Position.Y.Offset >= 28 then
-                                    child.Text = description
-                                    break
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
     end)
     LanguageBtn.Parent = FoldersContainer
     
-    -- Кнопка контактов
     local ContactsBtn = Instance.new("TextButton")
     ContactsBtn.Size = UDim2.new(0, 200, 0, 50)
     ContactsBtn.BackgroundColor3 = Theme.Lavender
@@ -1281,5 +1247,5 @@ end
 print("[Loader] Все модули обработаны.")
 task.wait(0.5)
 if Ctx.Notify then
-    Ctx.Notify("Rite Cheat", "TEST1 Меню загружено! Приятной Игры❤️.", 5, "success")
+    Ctx.Notify("Rite Cheat", "11Меню загружено! Приятной Игры❤️.", 5, "success")
 end

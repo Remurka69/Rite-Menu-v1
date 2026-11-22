@@ -14,59 +14,105 @@ return function(Ctx)
     local CreateSlider = Ctx.UI.CreateSlider
     local CreateDropdown = Ctx.UI.CreateDropdown
 
-    -- Resize Handle
-    do
-        local ResizeHandle = Instance.new("TextButton")
-        ResizeHandle.Size = UDim2.new(0, 24, 0, 24)
-        ResizeHandle.BackgroundTransparency = 1
-        ResizeHandle.Text = ""
-        ResizeHandle.BorderSizePixel = 0
-        ResizeHandle.ZIndex = 100
-        ResizeHandle.Position = UDim2.new(1, -26, 1, -26)
-        ResizeHandle.Parent = MainFrame
-
-        local InnerCornerV = Instance.new("Frame", ResizeHandle)
-        InnerCornerV.Size = UDim2.new(0, 2, 0, 8)
-        InnerCornerV.Position = UDim2.new(1, -10, 0.5, -4)
-        InnerCornerV.BackgroundColor3 = Theme.Lavender
-        InnerCornerV.BorderSizePixel = 0
-        Instance.new("UICorner", InnerCornerV).CornerRadius = UDim.new(0, 1)
-
-        local InnerCornerH = Instance.new("Frame", ResizeHandle)
-        InnerCornerH.Size = UDim2.new(0, 8, 0, 2)
-        InnerCornerH.Position = UDim2.new(0.5, -4, 1, -10)
-        InnerCornerH.BackgroundColor3 = Theme.Lavender
-        InnerCornerH.BorderSizePixel = 0
-        Instance.new("UICorner", InnerCornerH).CornerRadius = UDim.new(0, 1)
-
-        local isResizing, startMousePos, startFrameSize = false, nil, nil
-        local MIN_SIZE, MAX_SIZE = Vector2.new(400, 280), Vector2.new(800, 520)
-
-        local function setCornerColor(color)
-            InnerCornerV.BackgroundColor3 = color
-            InnerCornerH.BackgroundColor3 = color
-        end
-
-        ResizeHandle.MouseButton1Down:Connect(function()
-            isResizing = true
-            startMousePos = UserInputService:GetMouseLocation()
-            startFrameSize = Vector2.new(MainFrame.Size.X.Offset, MainFrame.Size.Y.Offset)
-            setCornerColor(Theme.LavenderGlow)
-        end)
-        UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 and isResizing then
-                isResizing = false; setCornerColor(Theme.Lavender)
-            end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-            if isResizing and input.UserInputType == Enum.UserInputType.MouseMovement then
-                local delta = UserInputService:GetMouseLocation() - startMousePos
-                MainFrame.Size = UDim2.new(0, math.clamp(startFrameSize.X + delta.X, MIN_SIZE.X, MAX_SIZE.X), 0, math.clamp(startFrameSize.Y + delta.Y, MIN_SIZE.Y, MAX_SIZE.Y))
-            end
-        end)
-        ResizeHandle.MouseEnter:Connect(function() if not isResizing then setCornerColor(Theme.LavenderGlow) end end)
-        ResizeHandle.MouseLeave:Connect(function() if not isResizing then setCornerColor(Theme.Lavender) end end)
+   -- Resize Handle (с поддержкой мыши и touch)
+do
+    local ResizeHandle = Instance.new("TextButton")
+    ResizeHandle.Size = UDim2.new(0, 32, 0, 32)
+    ResizeHandle.BackgroundTransparency = 1
+    ResizeHandle.Text = ""
+    ResizeHandle.BorderSizePixel = 0
+    ResizeHandle.ZIndex = 100
+    ResizeHandle.Position = UDim2.new(1, -34, 1, -34)
+    ResizeHandle.Parent = MainFrame
+    
+    -- Визуальные уголки (больше для удобства на телефоне)
+    local InnerCornerV = Instance.new("Frame", ResizeHandle)
+    InnerCornerV.Size = UDim2.new(0, 3, 0, 12)
+    InnerCornerV.Position = UDim2.new(1, -14, 0.5, -6)
+    InnerCornerV.BackgroundColor3 = Theme.Lavender
+    InnerCornerV.BorderSizePixel = 0
+    Instance.new("UICorner", InnerCornerV).CornerRadius = UDim.new(0, 1)
+    
+    local InnerCornerH = Instance.new("Frame", ResizeHandle)
+    InnerCornerH.Size = UDim2.new(0, 12, 0, 3)
+    InnerCornerH.Position = UDim2.new(0.5, -6, 1, -14)
+    InnerCornerH.BackgroundColor3 = Theme.Lavender
+    InnerCornerH.BorderSizePixel = 0
+    Instance.new("UICorner", InnerCornerH).CornerRadius = UDim.new(0, 1)
+    
+    local isResizing = false
+    local startMousePos = nil
+    local startFrameSize = nil
+    local MIN_SIZE, MAX_SIZE = Vector2.new(400, 280), Vector2.new(800, 520)
+    
+    local function setCornerColor(color)
+        InnerCornerV.BackgroundColor3 = color
+        InnerCornerH.BackgroundColor3 = color
     end
+    
+    local function getTouchPosition(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            return input.Position
+        else
+            return UserInputService:GetMouseLocation()
+        end
+    end
+    
+    local function startResize(input)
+        isResizing = true
+        startMousePos = getTouchPosition(input)
+        startFrameSize = Vector2.new(MainFrame.Size.X.Offset, MainFrame.Size.Y.Offset)
+        setCornerColor(Theme.LavenderGlow)
+    end
+    
+    local function stopResize()
+        if isResizing then
+            isResizing = false
+            setCornerColor(Theme.Lavender)
+        end
+    end
+    
+    local function updateResize(input)
+        if not isResizing then return end
+        local currentPos = getTouchPosition(input)
+        local delta = currentPos - startMousePos
+        MainFrame.Size = UDim2.new(0, math.clamp(startFrameSize.X + delta.X, MIN_SIZE.X, MAX_SIZE.X), 0, math.clamp(startFrameSize.Y + delta.Y, MIN_SIZE.Y, MAX_SIZE.Y))
+    end
+    
+    -- Поддержка мыши
+    ResizeHandle.MouseButton1Down:Connect(function()
+        startResize({UserInputType = Enum.UserInputType.MouseButton1})
+    end)
+    
+    -- Поддержка touch (телефон)
+    ResizeHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            startResize(input)
+        end
+    end)
+    
+    -- Глобальные обработчики для перемещения
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            stopResize()
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if isResizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            updateResize(input)
+        end
+    end)
+    
+    -- Hover эффект только для мыши
+    ResizeHandle.MouseEnter:Connect(function()
+        if not isResizing then setCornerColor(Theme.LavenderGlow) end
+    end)
+    
+    ResizeHandle.MouseLeave:Connect(function()
+        if not isResizing then setCornerColor(Theme.Lavender) end
+    end)
+end
 
     -- Transparency & Corner Radius
     do

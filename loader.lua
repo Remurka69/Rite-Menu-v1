@@ -1185,5 +1185,5 @@ end
 print("[Loader] Все модули обработаны.")
 task.wait(0.5) -- Дать время UI обновиться
 if Ctx.Notify then
-Ctx.Notify("Rite Cheat", "TEST10Меню загружено! Приятной игры❤️.", 5, "success")
+Ctx.Notify("Rite Cheat", "TEST11Меню загружено! Приятной игры❤️.", 5, "success")
 end

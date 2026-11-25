@@ -1182,7 +1182,7 @@ do
 
                 if myHRP and targetHRP then
                     -- CFrame цели * смещение: вверх на followHeight, назад на followDistance
-                    local offset = CFrame.new(0, followHeight, -followDistance)
+                    local offset = CFrame.new(0, followHeight, followDistance)
                     myHRP.CFrame = targetHRP.CFrame * offset
                     -- Обнуляем скорость, чтобы не было инерции/падения
                     myHRP.Velocity = Vector3.new(0, 0, 0)

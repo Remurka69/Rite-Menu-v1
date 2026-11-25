@@ -462,19 +462,60 @@ CreateToggle(VisualsTab, "Health Bars ESP", function(state)
 end)
 
 local rc_conn, rc_hue = nil, 0
+local rc_originalColors = {}
+local rc_charAddedConn = nil
+
+local function rc_saveColors()
+    local char = player.Character
+    if not char then return end
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and not rc_originalColors[part] then
+            rc_originalColors[part] = part.Color
+        end
+    end
+end
+
+local function rc_restoreColors()
+    for part, color in pairs(rc_originalColors) do
+        if part and part.Parent then
+            part.Color = color
+        end
+    end
+    rc_originalColors = {}
+end
+
 CreateToggle(PlayerTab, "Rainbow Character (Visible only to you)", function(state)
     if state then
         if rc_conn then return end
+        rc_originalColors = {}
+        rc_saveColors()
+        
+        -- Сохраняем цвета новых частей при респауне
+        rc_charAddedConn = player.CharacterAdded:Connect(function()
+            task.wait(0.5) -- Ждём загрузки частей
+            rc_saveColors()
+        end)
+        
         rc_conn = RunService.RenderStepped:Connect(function(dt)
             rc_hue = (rc_hue + dt * 0.2) % 1
             local char = player.Character
             if char then
                 for _, part in pairs(char:GetDescendants()) do
-                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then part.Color = Color3.fromHSV(rc_hue, 1, 1) end
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        part.Color = Color3.fromHSV(rc_hue, 1, 1)
+                    end
                 end
             end
         end)
-    elseif rc_conn then rc_conn:Disconnect(); rc_conn = nil end
+    elseif rc_conn then
+        rc_conn:Disconnect()
+        rc_conn = nil
+        if rc_charAddedConn then
+            rc_charAddedConn:Disconnect()
+            rc_charAddedConn = nil
+        end
+        rc_restoreColors()
+    end
 end)
 
 local aj_conn

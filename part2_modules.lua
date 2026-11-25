@@ -205,7 +205,7 @@ end
         CreateToggle(WorldTab, "Custom Gravity", function(state)
             if state then CustomGravityModule:Enable() else CustomGravityModule:Disable() end
         end)
-        CreateSlider(WorldTab, "Gravity Value", 0, 1000, 50, function(v)
+        CreateSlider(WorldTab, "Gravity Value", 0, 500, 50, function(v)
             CustomGravityModule.Param = v
             if CustomGravityModule.IsEnabled then workspace.Gravity = v end
         end)

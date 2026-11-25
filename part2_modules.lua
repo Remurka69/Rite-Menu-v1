@@ -374,62 +374,140 @@ end
     end
 
     -- Health Bars, Rainbow, AutoJump, WallHop, TP Player, TP Mouse, Aimbot FOV
-    do
-        local HealthBarsESPModule = {}
-        local hbe_conn, hbe_espBars = nil, {}
-        local function hbe_createBar(p)
-            if p == player then return end
-            local function setupBar()
-                if not p.Character then return end
-                local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-                if not hrp then return end
-                if hbe_espBars[p] then hbe_espBars[p].gui:Destroy() end
-                local bg = Instance.new("BillboardGui")
-                bg.Name = "ESP_HP"; bg.Size = UDim2.new(0, 100, 0, 14); bg.StudsOffset = Vector3.new(0, 3.5, 0); bg.AlwaysOnTop = true; bg.Adornee = hrp; bg.Parent = hrp
-                local bgFrame = Instance.new("Frame", bg); bgFrame.Size = UDim2.new(1, 0, 1, 0); bgFrame.BackgroundColor3 = Theme.ElementBg; bgFrame.BackgroundTransparency = 0.2; bgFrame.BorderSizePixel = 0
-                Instance.new("UICorner", bgFrame).CornerRadius = UDim.new(0, 3)
-                local stroke = Instance.new("UIStroke", bgFrame); stroke.Color = Theme.Lavender; stroke.Thickness = 1.2; stroke.Transparency = 0.2
-                local fillContainer = Instance.new("Frame", bg); fillContainer.Size = UDim2.new(1, -4, 1, -4); fillContainer.Position = UDim2.new(0, 2, 0, 2); fillContainer.BackgroundTransparency = 1; fillContainer.ClipsDescendants = true
-                Instance.new("UICorner", fillContainer).CornerRadius = UDim.new(0, 2)
-                local fill = Instance.new("Frame", fillContainer); fill.Size = UDim2.new(1, 0, 1, 0); fill.BackgroundColor3 = Theme.Lavender; fill.BorderSizePixel = 0
-                local nameLabel = Instance.new("TextLabel", bg); nameLabel.Size = UDim2.new(1, 0, 0, 12); nameLabel.Position = UDim2.new(0, 0, 0, -14); nameLabel.BackgroundTransparency = 1; nameLabel.TextColor3 = Theme.Lavender; nameLabel.Font = FontMain; nameLabel.TextSize = 11; nameLabel.Text = p.Name; nameLabel.TextStrokeTransparency = 0.5
-                hbe_espBars[p] = {gui = bg, fill = fill}
-            end
-            setupBar()
-            p.CharacterAdded:Connect(setupBar)
+local HealthBarsESPModule = {}
+local hbe_conn, hbe_espBars = nil, {}
+
+local function hbe_getHealthColor(hp)
+    -- Плавный градиент: красный (0%) → жёлтый (50%) → зелёный (100%)
+    if hp >= 0.5 then
+        -- От жёлтого к зелёному
+        local t = (hp - 0.5) * 2  -- 0..1
+        return Color3.new(1, 1 - t * 0.5, 0.2 + t * 0.3)
+    else
+        -- От красного к жёлтому
+        local t = hp * 2  -- 0..1
+        return Color3.new(1, 0.3 + t * 0.7, 0.2)
+    end
+end
+
+local function hbe_createBar(p)
+    if p == player then return end
+    
+    local function cleanup()
+        if hbe_espBars[p] then
+            if hbe_espBars[p].gui then hbe_espBars[p].gui:Destroy() end
+            hbe_espBars[p] = nil
         end
-        function HealthBarsESPModule:Enable()
-            if hbe_conn then return end
-            for _, p in ipairs(Players:GetPlayers()) do hbe_createBar(p) end
-            local addConn = Players.PlayerAdded:Connect(hbe_createBar)
-            local removeConn = Players.PlayerRemoving:Connect(function(p) if hbe_espBars[p] then hbe_espBars[p].gui:Destroy(); hbe_espBars[p] = nil end end)
-            local updConn = RunService.RenderStepped:Connect(function()
-                local cam = workspace.CurrentCamera
-                if not cam then return end
-                for p, data in pairs(hbe_espBars) do
-                    if p.Character then
-                        local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-                        local hum = p.Character:FindFirstChildOfClass("Humanoid")
-                        if hrp and hum then
-                            local scale = math.clamp(50 / (hrp.Position - cam.CFrame.Position).Magnitude, 0.3, 2.0)
-                            data.gui.Size = UDim2.new(0, 100 * scale, 0, 14 * scale)
-                            local hp = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
-                            data.fill.Size = UDim2.new(hp, 0, 1, 0)
-                            data.fill.BackgroundColor3 = hp < 0.3 and Color3.fromRGB(255, 90, 90) or (hp < 0.6 and Color3.fromRGB(255, 210, 120) or Theme.Lavender)
-                        end
-                    end
+    end
+    
+    local function setupBar()
+        cleanup()
+        if not p.Character then return end
+        local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+        local hum = p.Character:FindFirstChildOfClass("Humanoid")
+        if not hrp or not hum then return end
+        
+        -- Контейнер BillboardGui (фиксированный размер в пикселях, не зависит от расстояния)
+        local bg = Instance.new("BillboardGui")
+        bg.Name = "HealthBarESP"
+        bg.Size = UDim2.new(0, 100, 0, 28)  -- Фиксированный размер
+        bg.StudsOffset = Vector3.new(0, 3, 0)  -- Над головой
+        bg.AlwaysOnTop = true
+        bg.Adornee = hrp
+        bg.Parent = hrp
+        
+        -- Фон полоски
+        local bgFrame = Instance.new("Frame", bg)
+        bgFrame.Size = UDim2.new(1, 0, 0, 10)
+        bgFrame.Position = UDim2.new(0, 0, 0, 14)
+        bgFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+        bgFrame.BackgroundTransparency = 0.3
+        bgFrame.BorderSizePixel = 0
+        Instance.new("UICorner", bgFrame).CornerRadius = UDim.new(0, 3)
+        
+        -- Обводка
+        local stroke = Instance.new("UIStroke", bgFrame)
+        stroke.Color = Theme.Lavender
+        stroke.Thickness = 1
+        stroke.Transparency = 0.4
+        
+        -- Заполнение ХП
+        local fill = Instance.new("Frame", bgFrame)
+        fill.Size = UDim2.new(1, 0, 1, 0)
+        fill.BackgroundColor3 = Color3.fromRGB(100, 220, 100)
+        fill.BorderSizePixel = 0
+        Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 3)
+        
+        -- Текст с процентами внутри полоски
+        local hpText = Instance.new("TextLabel", bgFrame)
+        hpText.Size = UDim2.new(1, 0, 1, 0)
+        hpText.BackgroundTransparency = 1
+        hpText.TextColor3 = Color3.fromRGB(255, 255, 255)
+        hpText.Font = FontMain
+        hpText.TextSize = 9
+        hpText.TextStrokeTransparency = 0.3
+        hpText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        hpText.Text = "100%"
+        
+        -- Имя игрока над полоской
+        local nameLabel = Instance.new("TextLabel", bg)
+        nameLabel.Size = UDim2.new(1, 0, 0, 12)
+        nameLabel.Position = UDim2.new(0, 0, 0, 0)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.TextColor3 = Theme.Lavender
+        nameLabel.Font = FontMain
+        nameLabel.TextSize = 11
+        nameLabel.TextStrokeTransparency = 0.4
+        nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        nameLabel.Text = p.Name
+        
+        hbe_espBars[p] = {gui = bg, fill = fill, hpText = hpText}
+    end
+    
+    setupBar()
+    p.CharacterAdded:Connect(setupBar)
+end
+
+function HealthBarsESPModule:Enable()
+    if hbe_conn then return end
+    for _, p in ipairs(Players:GetPlayers()) do hbe_createBar(p) end
+    local addConn = Players.PlayerAdded:Connect(hbe_createBar)
+    local removeConn = Players.PlayerRemoving:Connect(function(p)
+        if hbe_espBars[p] then
+            if hbe_espBars[p].gui then hbe_espBars[p].gui:Destroy() end
+            hbe_espBars[p] = nil
+        end
+    end)
+    local updConn = RunService.RenderStepped:Connect(function()
+        for p, data in pairs(hbe_espBars) do
+            if p.Character then
+                local hum = p.Character:FindFirstChildOfClass("Humanoid")
+                if hum and data.fill and data.hpText then
+                    local hp = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
+                    data.fill.Size = UDim2.new(hp, 0, 1, 0)
+                    data.fill.BackgroundColor3 = hbe_getHealthColor(hp)
+                    data.hpText.Text = math.floor(hp * 100) .. "%"
                 end
-            end)
-            hbe_conn = {addConn, removeConn, updConn}
+            end
         end
-        function HealthBarsESPModule:Disable()
-            if hbe_conn then for _, c in ipairs(hbe_conn) do c:Disconnect() end; hbe_conn = nil end
-            for _, data in pairs(hbe_espBars) do data.gui:Destroy() end
-            hbe_espBars = {}
-        end
-        CreateToggle(VisualsTab, "Health Bars ESP", function(state)
-            if state then HealthBarsESPModule:Enable() else HealthBarsESPModule:Disable() end
-        end)
+    end)
+    hbe_conn = {addConn, removeConn, updConn}
+end
+
+function HealthBarsESPModule:Disable()
+    if hbe_conn then
+        for _, c in ipairs(hbe_conn) do c:Disconnect() end
+        hbe_conn = nil
+    end
+    for _, data in pairs(hbe_espBars) do
+        if data.gui then data.gui:Destroy() end
+    end
+    hbe_espBars = {}
+end
+
+CreateToggle(VisualsTab, "Health Bars ESP", function(state)
+    if state then HealthBarsESPModule:Enable() else HealthBarsESPModule:Disable() end
+end)
 
         local rc_conn, rc_hue = nil, 0
         CreateToggle(PlayerTab, "Rainbow Character (Visible only to you)", function(state)

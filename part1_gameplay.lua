@@ -386,30 +386,68 @@ end
 
 -- ESP
 do
-    local espFolder = Instance.new("Folder", Ctx.Gui.ScreenGui)
-    local function updateESP()
-        espFolder:ClearAllChildren()
-        if not Settings.ESP then return end
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p ~= player and p.Character and p.Character:FindFirstChild("Head") then
-                local bg = Instance.new("BillboardGui", espFolder)
-                bg.Adornee = p.Character.Head
-                bg.Size = UDim2.new(0, 100, 0, 30)
-                bg.AlwaysOnTop = true
-                bg.StudsOffset = Vector3.new(0, 2.5, 0)
-                local tl = Instance.new("TextLabel", bg)
-                tl.Size = UDim2.new(1, 0, 1, 0)
-                tl.BackgroundTransparency = 1
-                tl.Text = p.Name
-                tl.TextColor3 = Color3.new(1, 1, 1)
-                tl.Font = FontDesc
-                tl.TextSize = 14
-            end
+local espFolder = Instance.new("Folder", Ctx.Gui.ScreenGui)
+Settings.ESPColor = Color3.new(1, 1, 1)
+
+local espColors = {
+    ["White"] = Color3.new(1, 1, 1),
+    ["Red"] = Color3.fromRGB(255, 80, 80),
+    ["Green"] = Color3.fromRGB(80, 255, 120),
+    ["Blue"] = Color3.fromRGB(80, 160, 255),
+    ["Yellow"] = Color3.fromRGB(255, 220, 80),
+    ["Purple"] = Color3.fromRGB(186, 164, 238),
+    ["Cyan"] = Color3.fromRGB(80, 240, 255),
+    ["Orange"] = Color3.fromRGB(255, 160, 80)
+}
+
+local function updateESP()
+    espFolder:ClearAllChildren()
+    if not Settings.ESP then return end
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= player and p.Character and p.Character:FindFirstChild("Head") then
+            local bg = Instance.new("BillboardGui", espFolder)
+            bg.Adornee = p.Character.Head
+            bg.Size = UDim2.new(0, 120, 0, 32)
+            bg.AlwaysOnTop = true
+            bg.StudsOffset = Vector3.new(0, 2.5, 0)
+            bg.LightInfluence = 0 -- Видно даже в темноте
+            
+            local tl = Instance.new("TextLabel", bg)
+            tl.Size = UDim2.new(1, 0, 1, 0)
+            tl.BackgroundTransparency = 1
+            tl.Text = p.Name
+            tl.TextColor3 = Settings.ESPColor
+            tl.Font = FontMain -- Более красивый шрифт
+            tl.TextSize = 14
+            tl.TextStrokeTransparency = 0.5 -- Обводка для читаемости
+            tl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+            tl.TextScaled = false
         end
     end
-    Players.PlayerAdded:Connect(updateESP)
-    Players.PlayerRemoving:Connect(updateESP)
-    CreateToggle(VisualsTab, "ESP (Player Names)", function(state) Settings.ESP = state; updateESP() end)
+end
+
+local function updateESPColors()
+    for _, bg in ipairs(espFolder:GetChildren()) do
+        local tl = bg:FindFirstChildOfClass("TextLabel")
+        if tl then tl.TextColor3 = Settings.ESPColor end
+    end
+end
+
+Players.PlayerAdded:Connect(updateESP)
+Players.PlayerRemoving:Connect(updateESP)
+
+CreateToggle(VisualsTab, "ESP (Player Names)", function(state) 
+    Settings.ESP = state
+    updateESP() 
+end)
+
+CreateDropdown(VisualsTab, "ESP Color", {
+    "White", "Red", "Green", "Blue", 
+    "Yellow", "Purple", "Cyan", "Orange"
+}, "White", function(colorName)
+    Settings.ESPColor = espColors[colorName] or Color3.new(1, 1, 1)
+    updateESPColors()
+end)
 end
 
 -- Tracers & Chams

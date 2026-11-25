@@ -371,7 +371,7 @@ local function hbe_createBar(p)
 
         local bg = Instance.new("BillboardGui")
         bg.Name = "HealthBarESP"
-        bg.Size = UDim2.new(6, 0, 0.9, 0)
+        bg.Size = UDim2.new(6, 0, 1.8, 0)
         bg.StudsOffset = Vector3.new(0, 5.25, 0)
         bg.AlwaysOnTop = true
         bg.Adornee = hrp

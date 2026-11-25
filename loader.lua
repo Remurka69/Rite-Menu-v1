@@ -253,19 +253,91 @@ MainFrame.Visible = true
 MainFrame.Size = UDim2.new(0, 0, 0, 0)
 TweenService:Create(MainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 520, 0, 340)}):Play()
 end)
+-- Функция отключения всех функций
+local function disableAllFeatures()
+    print("[Rite Cheat] Начинаю отключение всех функций...")
+    
+    -- Сбрасываем все настройки
+    Settings.WalkSpeed = 16
+    Settings.JumpPower = 50
+    Settings.SpeedHackEnabled = false
+    Settings.JumpHackEnabled = false
+    Settings.InfJump = false
+    Settings.InfZoom = false
+    Settings.Noclip = false
+    Settings.FreezeSelf = false
+    Settings.NightVision = false
+    Settings.Aimbot = false
+    Settings.Spinbot = false
+    Settings.Freecam = false
+    Settings.ESP = false
+    Settings.Tracers = false
+    Settings.Chams = false
+    Settings.LongJump = false
+    Settings.WaterWalk = false
+    Settings.NoCameraBob = false
+    Settings.NoGrass = false
+    Settings.SpeedBoost = false
+    Settings.VehicleFly = false
+    
+    -- Восстанавливаем нормальные значения
+    pcall(function()
+        local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.WalkSpeed = 16
+            hum.JumpPower = 50
+            hum.PlatformStand = false
+        end
+    end)
+    
+    pcall(function()
+        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.Anchored = false end
+    end)
+    
+    pcall(function()
+        workspace.Gravity = 196.2
+    end)
+    
+    pcall(function()
+        camera.CameraType = Enum.CameraType.Custom
+    end)
+    
+    pcall(function()
+        player.CameraMaxZoomDistance = 128
+    end)
+    
+    pcall(function()
+        Lighting.Ambient = Color3.new(0.5, 0.5, 0.5)
+        Lighting.OutdoorAmbient = Color3.new(0.5, 0.5, 0.5)
+        Lighting.Brightness = 1
+        Lighting.GlobalShadows = true
+    end)
+    
+    -- Очищаем ESP и Chams
+    if _G.TracersList then
+        for _, line in pairs(_G.TracersList) do pcall(function() line:Destroy() end) end
+        _G.TracersList = {}
+    end
+    if _G.Skeletons then
+        for _, skeleton in pairs(_G.Skeletons) do
+            for _, line in pairs(skeleton) do pcall(function() line:Destroy() end) end
+        end
+        _G.Skeletons = {}
+    end
+    
+    print("[Rite Cheat] ✓ Все функции успешно отключены")
+    print("[Rite Cheat] Скрипт готов к проверке")
+end
+
+-- Добавляем функцию в Ctx для доступа из других модулей
+Ctx.DisableAllFeatures = disableAllFeatures
+
 CloseBtn.MouseButton1Click:Connect(function()
-if _G.TracersList then
-for _, line in pairs(_G.TracersList) do pcall(function() line:Destroy() end) end
-_G.TracersList = {}
-end
-if _G.Skeletons then
-for _, skeleton in pairs(_G.Skeletons) do
-for _, line in pairs(skeleton) do pcall(function() line:Destroy() end) end
-end
-_G.Skeletons = {}
-end
-ScreenGui:Destroy()
+    disableAllFeatures()
+    ScreenGui:Destroy()
 end)
+
 local ActiveTab = nil
 local function SwitchToTab(tabName)
 if ActiveTab == tabName then return end
@@ -1185,5 +1257,5 @@ end
 print("[Loader] Все модули обработаны.")
 task.wait(0.5) -- Дать время UI обновиться
 if Ctx.Notify then
-Ctx.Notify("Rite Cheat", "TEST23Меню загружено! Приятной игры❤️.", 5, "success")
+Ctx.Notify("Rite Cheat", "TEST24Меню загружено! Приятной игры❤️.", 5, "success")
 end

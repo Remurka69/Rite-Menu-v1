@@ -483,14 +483,25 @@ function HealthBarsESPModule:Enable()
         local cam = workspace.CurrentCamera
         if not cam then return end
         for p, data in pairs(hbe_espBars) do
-            if p.Character then
+            if p.Character and data.gui and data.fill and data.hpText then
                 local hrp = p.Character:FindFirstChild("HumanoidRootPart")
                 local hum = p.Character:FindFirstChildOfClass("Humanoid")
                 if hrp and hum then
                     -- Масштабирование: чем дальше, тем меньше полоска
                     local distance = (hrp.Position - cam.CFrame.Position).Magnitude
                     local scale = math.clamp(40 / distance, 0.35, 1.3)
-                    data.gui.Size = UDim2.new(0, 80 * scale, 0, 10 * scale)
+                    local newWidth = 80 * scale
+                    local newHeight = 10 * scale
+                    
+                    -- Масштабируем BillboardGui
+                    data.gui.Size = UDim2.new(0, newWidth, 0, newHeight + 12) -- +12 для имени
+                    
+                    -- Масштабируем bgFrame (фон полоски)
+                    local bgFrame = data.fill.Parent
+                    if bgFrame then
+                        bgFrame.Size = UDim2.new(1, 0, 0, newHeight)
+                        bgFrame.Position = UDim2.new(0, 0, 0, 12 * scale) -- Позиция относительно масштаба
+                    end
                     
                     -- Обновление HP и цвета
                     local hp = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
@@ -506,6 +517,10 @@ function HealthBarsESPModule:Enable()
                         hpColor = Color3.fromRGB(70, 220, 70)      -- Зелёный (выше 50%)
                     end
                     data.fill.BackgroundColor3 = hpColor
+                    
+                    -- Обновляем текст
+                    data.hpText.Text = math.floor(hp * 100) .. "%"
+                    data.hpText.TextSize = math.max(8, 9 * scale)
                 end
             end
         end

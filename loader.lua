@@ -280,19 +280,25 @@ local function disableAllFeatures()
     Settings.SpeedBoost = false
     Settings.VehicleFly = false
     
-    -- Восстанавливаем нормальные значения
+    -- Восстанавливаем нормальные значения (каждая операция в отдельном pcall)
     pcall(function()
-        local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-        if hum then
-            hum.WalkSpeed = 16
-            hum.JumpPower = 50
-            hum.PlatformStand = false
+        if player.Character and player.Character.Parent then
+            local hum = player.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Parent then
+                hum.WalkSpeed = 16
+                hum.JumpPower = 50
+                hum.PlatformStand = false
+            end
         end
     end)
     
     pcall(function()
-        local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then hrp.Anchored = false end
+        if player.Character and player.Character.Parent then
+            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+            if hrp and hrp.Parent then
+                hrp.Anchored = false
+            end
+        end
     end)
     
     pcall(function()
@@ -315,16 +321,21 @@ local function disableAllFeatures()
     end)
     
     -- Очищаем ESP и Chams
-    if _G.TracersList then
-        for _, line in pairs(_G.TracersList) do pcall(function() line:Destroy() end) end
-        _G.TracersList = {}
-    end
-    if _G.Skeletons then
-        for _, skeleton in pairs(_G.Skeletons) do
-            for _, line in pairs(skeleton) do pcall(function() line:Destroy() end) end
+    pcall(function()
+        if _G.TracersList then
+            for _, line in pairs(_G.TracersList) do pcall(function() line:Destroy() end) end
+            _G.TracersList = {}
         end
-        _G.Skeletons = {}
-    end
+    end)
+    
+    pcall(function()
+        if _G.Skeletons then
+            for _, skeleton in pairs(_G.Skeletons) do
+                for _, line in pairs(skeleton) do pcall(function() line:Destroy() end) end
+            end
+            _G.Skeletons = {}
+        end
+    end)
     
     print("[Rite Cheat] ✓ Все функции успешно отключены")
     print("[Rite Cheat] Скрипт готов к проверке")
@@ -334,8 +345,8 @@ end
 Ctx.DisableAllFeatures = disableAllFeatures
 
 CloseBtn.MouseButton1Click:Connect(function()
-    disableAllFeatures()
-    ScreenGui:Destroy()
+    pcall(function() disableAllFeatures() end)
+    pcall(function() ScreenGui:Destroy() end)
 end)
 
 local ActiveTab = nil

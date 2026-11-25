@@ -631,7 +631,7 @@ do
         end
     end)
     CreateSlider(VisualsTab, "Freecam Speed", 10, 200, 50, function(v) Settings.FreecamSpeed = v end)
-    CreateSlider(VisualsTab, "FOV", 70, 170, 70, function(v) camera.FieldOfView = v end)
+    CreateSlider(VisualsTab, "FOV", 70, 120, 70, function(v) camera.FieldOfView = v end)
 end
 
 -- No Camera Bob
@@ -734,7 +734,7 @@ do
             if longJumpConn then longJumpConn:Disconnect(); longJumpConn = nil end
         end
     end)
-    CreateSlider(MovementTab, "Long Jump Force", 50, 300, 150, function(v)
+    CreateSlider(MovementTab, "Long Jump Force", 50, 2000, 150, function(v)
         longJumpForce = v / 10
     end)
 end
@@ -749,7 +749,7 @@ do
     local isBoosting = false
     local isListeningForKey = false
     local speedBoostEnabled = false
-    local activeSlider = nil
+    local isSliderDragging = false
 
     local HEADER_H = 38
     local BODY_H = 94
@@ -890,8 +890,22 @@ do
 
     SliderBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            activeSlider = { update = updateSlider }
+            isSliderDragging = true
             updateSlider(input)
+        end
+    end)
+
+    -- Локальный обработчик движения мыши именно для этого слайдера
+    UserInputService.InputChanged:Connect(function(input)
+        if isSliderDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            updateSlider(input)
+        end
+    end)
+
+    -- Локальный обработчик отпускания кнопки мыши
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isSliderDragging = false
         end
     end)
 

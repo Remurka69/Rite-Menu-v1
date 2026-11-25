@@ -681,56 +681,116 @@ end
 
 -- Freecam & FOV
 do
-    local freecamConnection = nil
-    local freecamCFrame = nil
-    local wasPlatformStand = false
-    local mouseDelta = Vector2.new(0, 0)
-    local cameraAngles = Vector2.new(0, 0)
-    CreateToggle(VisualsTab, "Freecam", function(state)
-        Settings.Freecam = state
-        local char = player.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        if state then
-            if hum then wasPlatformStand = hum.PlatformStand; hum.PlatformStand = true end
-            if hrp then hrp.Anchored = true end
-            freecamCFrame = camera.CFrame
-            cameraAngles = Vector2.new(0, 0)
-            camera.CameraType = Enum.CameraType.Scriptable
-            freecamConnection = RunService.RenderStepped:Connect(function(dt)
-                local move = Vector3.new(0, 0, 0)
-                local speed = Settings.FreecamSpeed * dt
-                if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + freecamCFrame.LookVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - freecamCFrame.LookVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - freecamCFrame.RightVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + freecamCFrame.RightVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
-                if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move = move - Vector3.new(0, 1, 0) end
-                if move.Magnitude > 0 then
-                    freecamCFrame = freecamCFrame + (move.Unit * speed)
-                end
-                if mouseDelta.Magnitude > 0 then
-                    cameraAngles = cameraAngles + Vector2.new(-mouseDelta.X * Settings.FreecamMouseSensitivity, -mouseDelta.Y * Settings.FreecamMouseSensitivity)
-                    cameraAngles = Vector2.new(math.clamp(cameraAngles.X, -math.rad(90), math.rad(90)), cameraAngles.Y % (math.pi * 2))
-                    freecamCFrame = CFrame.new(freecamCFrame.Position) * CFrame.Angles(0, cameraAngles.Y, 0) * CFrame.Angles(cameraAngles.X, 0, 0)
-                end
-                camera.CFrame = freecamCFrame
-                mouseDelta = Vector2.new(0, 0)
-            end)
-        else
-            if freecamConnection then freecamConnection:Disconnect(); freecamConnection = nil end
-            camera.CameraType = Enum.CameraType.Custom
-            if hum then hum.PlatformStand = wasPlatformStand end
-            if hrp then hrp.Anchored = false end
+local freecamConnection = nil
+local freecamCFrame = nil
+local wasPlatformStand = false
+local mouseDelta = Vector2.new(0, 0)
+local cameraAngles = Vector2.new(0, 0)
+
+CreateToggle(VisualsTab, "Freecam", function(state)
+    Settings.Freecam = state
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    
+    if state then
+        if hum then
+            wasPlatformStand = hum.PlatformStand
+            hum.PlatformStand = true
+            -- Отключаем все состояния движения, чтобы персонаж не двигался
+            for _, st in ipairs({
+                Enum.HumanoidStateType.Running,
+                Enum.HumanoidStateType.RunningNoPhysics,
+                Enum.HumanoidStateType.Jumping,
+                Enum.HumanoidStateType.FallingDown,
+                Enum.HumanoidStateType.Freefall,
+                Enum.HumanoidStateType.Climbing,
+                Enum.HumanoidStateType.Swimming,
+                Enum.HumanoidStateType.GettingUp,
+                Enum.HumanoidStateType.Landed,
+                Enum.HumanoidStateType.Seated,
+                Enum.HumanoidStateType.Physics,
+                Enum.HumanoidStateType.PlatformStanding,
+                Enum.HumanoidStateType.Ragdoll,
+                Enum.HumanoidStateType.StrafingNoPhysics,
+                Enum.HumanoidStateType.Flying
+            }) do
+                pcall(function() hum:SetStateEnabled(st, false) end)
+            end
         end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if Settings.Freecam and input.UserInputType == Enum.UserInputType.MouseMovement then
-            mouseDelta = input.Delta
+        if hrp then hrp.Anchored = true end
+        freecamCFrame = camera.CFrame
+        cameraAngles = Vector2.new(0, 0)
+        camera.CameraType = Enum.CameraType.Scriptable
+        
+        freecamConnection = RunService.RenderStepped:Connect(function(dt)
+            local move = Vector3.new(0, 0, 0)
+            local speed = Settings.FreecamSpeed * dt
+            
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + freecamCFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - freecamCFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - freecamCFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + freecamCFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then move = move - Vector3.new(0, 1, 0) end
+            
+            if move.Magnitude > 0 then
+                freecamCFrame = freecamCFrame + (move.Unit * speed)
+            end
+            
+            if mouseDelta.Magnitude > 0 then
+                cameraAngles = cameraAngles + Vector2.new(-mouseDelta.X * Settings.FreecamMouseSensitivity, -mouseDelta.Y * Settings.FreecamMouseSensitivity)
+                cameraAngles = Vector2.new(
+                    math.clamp(cameraAngles.X, -math.rad(90), math.rad(90)),
+                    cameraAngles.Y % (math.pi * 2)
+                )
+                freecamCFrame = CFrame.new(freecamCFrame.Position) * CFrame.Angles(0, cameraAngles.Y, 0) * CFrame.Angles(cameraAngles.X, 0, 0)
+            end
+            
+            camera.CFrame = freecamCFrame
+            mouseDelta = Vector2.new(0, 0)
+        end)
+    else
+        if freecamConnection then
+            freecamConnection:Disconnect()
+            freecamConnection = nil
         end
-    end)
-    CreateSlider(VisualsTab, "Freecam Speed", 10, 200, 50, function(v) Settings.FreecamSpeed = v end)
-    CreateSlider(VisualsTab, "FOV", 70, 120, 70, function(v) camera.FieldOfView = v end)
+        camera.CameraType = Enum.CameraType.Custom
+        if hum then
+            hum.PlatformStand = wasPlatformStand
+            -- Включаем все состояния обратно
+            for _, st in ipairs({
+                Enum.HumanoidStateType.Running,
+                Enum.HumanoidStateType.RunningNoPhysics,
+                Enum.HumanoidStateType.Jumping,
+                Enum.HumanoidStateType.FallingDown,
+                Enum.HumanoidStateType.Freefall,
+                Enum.HumanoidStateType.Climbing,
+                Enum.HumanoidStateType.Swimming,
+                Enum.HumanoidStateType.GettingUp,
+                Enum.HumanoidStateType.Landed,
+                Enum.HumanoidStateType.Seated,
+                Enum.HumanoidStateType.Physics,
+                Enum.HumanoidStateType.PlatformStanding,
+                Enum.HumanoidStateType.Ragdoll,
+                Enum.HumanoidStateType.StrafingNoPhysics,
+                Enum.HumanoidStateType.Flying
+            }) do
+                pcall(function() hum:SetStateEnabled(st, true) end)
+            end
+        end
+        if hrp then hrp.Anchored = false end
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if Settings.Freecam and input.UserInputType == Enum.UserInputType.MouseMovement then
+        mouseDelta = input.Delta
+    end
+end)
+
+CreateSlider(VisualsTab, "Freecam Speed", 10, 200, 50, function(v) Settings.FreecamSpeed = v end)
+CreateSlider(VisualsTab, "FOV", 70, 120, 70, function(v) camera.FieldOfView = v end)
 end
 
 -- No Camera Bob

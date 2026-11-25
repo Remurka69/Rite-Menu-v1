@@ -371,7 +371,7 @@ local function hbe_createBar(p)
 
         local bg = Instance.new("BillboardGui")
         bg.Name = "HealthBarESP"
-        bg.Size = UDim2.new(5, 0, 1.2, 0)
+        bg.Size = UDim2.new(4, 0, 1.2, 0)
         bg.StudsOffset = Vector3.new(0, 3.5, 0)
         bg.AlwaysOnTop = true
         bg.Adornee = hrp
@@ -392,13 +392,13 @@ local function hbe_createBar(p)
 
         local bgFrame = Instance.new("Frame", bg)
         bgFrame.Name = "BarContainer"
-        bgFrame.Size = UDim2.new(1, 0, 0.25, 0)
+        bgFrame.Size = UDim2.new(1, 0, 0.35, 0)
         bgFrame.Position = UDim2.new(0, 0, 0.45, 0)
         bgFrame.AnchorPoint = Vector2.new(0, 0.5)
         bgFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
         bgFrame.BackgroundTransparency = 0.2
         bgFrame.BorderSizePixel = 0
-        Instance.new("UICorner", bgFrame).CornerRadius = UDim.new(0, 0.1)
+        Instance.new("UICorner", bgFrame).CornerRadius = UDim.new(0, 0.2)
 
         local stroke = Instance.new("UIStroke", bgFrame)
         stroke.Color = Theme.Lavender
@@ -410,7 +410,7 @@ local function hbe_createBar(p)
         fill.Size = UDim2.new(1, 0, 1, 0)
         fill.BackgroundColor3 = Color3.fromRGB(100, 220, 100)
         fill.BorderSizePixel = 0
-        Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 0.1)
+        Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 0.2)
 
         local hpText = Instance.new("TextLabel", bgFrame)
         hpText.Name = "HpText"

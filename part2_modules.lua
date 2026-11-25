@@ -473,21 +473,39 @@ function HealthBarsESPModule:Enable()
     if hbe_conn then return end
     for _, p in ipairs(Players:GetPlayers()) do hbe_createBar(p) end
     local addConn = Players.PlayerAdded:Connect(hbe_createBar)
-    local removeConn = Players.PlayerRemoving:Connect(function(p)
-        if hbe_espBars[p] then
-            if hbe_espBars[p].gui then hbe_espBars[p].gui:Destroy() end
-            hbe_espBars[p] = nil
-        end
+    local removeConn = Players.PlayerRemoving:Connect(function(p) 
+        if hbe_espBars[p] then 
+            hbe_espBars[p].gui:Destroy()
+            hbe_espBars[p] = nil 
+        end 
     end)
     local updConn = RunService.RenderStepped:Connect(function()
+        local cam = workspace.CurrentCamera
+        if not cam then return end
         for p, data in pairs(hbe_espBars) do
             if p.Character then
+                local hrp = p.Character:FindFirstChild("HumanoidRootPart")
                 local hum = p.Character:FindFirstChildOfClass("Humanoid")
-                if hum and data.fill and data.hpText then
+                if hrp and hum then
+                    -- Масштабирование: чем дальше, тем меньше полоска
+                    local distance = (hrp.Position - cam.CFrame.Position).Magnitude
+                    local scale = math.clamp(40 / distance, 0.35, 1.3)
+                    data.gui.Size = UDim2.new(0, 80 * scale, 0, 10 * scale)
+                    
+                    -- Обновление HP и цвета
                     local hp = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
                     data.fill.Size = UDim2.new(hp, 0, 1, 0)
-                    data.fill.BackgroundColor3 = hbe_getHealthColor(hp)
-                    data.hpText.Text = math.floor(hp * 100) .. "%"
+                    
+                    -- Цветовая схема: зелёный → жёлтый → красный
+                    local hpColor
+                    if hp <= 0.1 then
+                        hpColor = Color3.fromRGB(255, 70, 70)      -- Красный (10% и меньше)
+                    elseif hp <= 0.5 then
+                        hpColor = Color3.fromRGB(255, 220, 70)     -- Жёлтый (50% и меньше)
+                    else
+                        hpColor = Color3.fromRGB(70, 220, 70)      -- Зелёный (выше 50%)
+                    end
+                    data.fill.BackgroundColor3 = hpColor
                 end
             end
         end

@@ -488,12 +488,12 @@ do
                     if Settings.ChamStyle == "Skeleton" then
                         for _, partName in ipairs(skeletonParts) do
                             local line = Drawing.new("Line")
-                            line.Color = Theme.Lavender; line.Thickness = 1.5; line.Transparency = 1; line.Visible = false
+                            line.Color = Theme.Lavender; line.Thickness = 2.5; line.Transparency = 1; line.Visible = false
                             _G.Skeletons[p][partName] = line
                         end
                     else
                         local box = Drawing.new("Square")
-                        box.Color = Theme.Lavender; box.Thickness = 1.5; box.Transparency = 1; box.Filled = false; box.Visible = false
+                        box.Color = Theme.Lavender; box.Thickness = 2; box.Transparency = 1; box.Filled = false; box.Visible = false
                         _G.Skeletons[p].Box = box
                     end
                 end
@@ -504,7 +504,7 @@ do
                         for _, obj in pairs(cham) do pcall(function() obj:Destroy() end) end
                         for _, partName in ipairs(skeletonParts) do
                             local line = Drawing.new("Line")
-                            line.Color = Theme.Lavender; line.Thickness = 1.5; line.Transparency = 1; line.Visible = false
+                            line.Color = Theme.Lavender; line.Thickness = 2.5; line.Transparency = 1; line.Visible = false
                             cham[partName] = line
                         end
                     end
@@ -544,7 +544,7 @@ do
                     if not cham.Box then
                         for _, obj in pairs(cham) do pcall(function() obj:Destroy() end) end
                         local box = Drawing.new("Square")
-                        box.Color = Theme.Lavender; box.Thickness = 1.5; box.Transparency = 1; box.Filled = false; box.Visible = false
+                        box.Color = Theme.Lavender; box.Thickness = 2; box.Transparency = 1; box.Filled = false; box.Visible = false
                         cham.Box = box
                     end
                     local minX, minY = math.huge, math.huge

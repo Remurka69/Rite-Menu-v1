@@ -152,12 +152,15 @@ return function(Ctx)
 
         local CustomGravityModule = { Param = 50, IsEnabled = false }
         local cg_conn
-        function CustomGravityModule:Enable()
-            if cg_conn then return end
-            self.IsEnabled = true
-            local value = self.Param or 50
-            cg_conn = RunService.Heartbeat:Connect(function() workspace.Gravity = value end)
-        end
+function CustomGravityModule:Enable()
+    if cg_conn then return end
+    self.IsEnabled = true
+    workspace.Gravity = self.Param or 50  -- ✅ сразу применяем актуальное значение
+    cg_conn = RunService.Heartbeat:Connect(function()
+        workspace.Gravity = self.Param or 50  -- ✅ читаем Param каждый тик
+    end)
+end
+        
         function CustomGravityModule:Disable()
             self.IsEnabled = false
             if cg_conn then cg_conn:Disconnect(); cg_conn = nil end

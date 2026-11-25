@@ -749,7 +749,7 @@ do
     local isBoosting = false
     local isListeningForKey = false
     local speedBoostEnabled = false
-    local activeSpeedSlider = nil
+    local activeSlider = nil
 
     local HEADER_H = 38
     local BODY_H = 94
@@ -890,7 +890,7 @@ do
 
     SliderBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            activeSpeedSlider = { update = updateSlider }
+            activeSlider = { update = updateSlider }
             updateSlider(input)
         end
     end)

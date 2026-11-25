@@ -289,9 +289,12 @@ RunService.Stepped:Connect(function()
                 if part:IsA("BasePart") and part.CanCollide then part.CanCollide = false end
             end
         end
-        if char:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.Anchored = Settings.FreezeSelf
-        end
+if char:FindFirstChild("HumanoidRootPart") then
+    char.HumanoidRootPart.Anchored = Settings.FreezeSelf
+end
+if char:FindFirstChildOfClass("Humanoid") then
+    char:FindFirstChildOfClass("Humanoid").PlatformStand = Settings.FreezeSelf
+end
         if Settings.Spinbot and char:FindFirstChild("HumanoidRootPart") then
             char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(25), 0)
         end
@@ -343,7 +346,63 @@ CreateButton(MovementTab, "Open Fly Panel", function()
     flyPanel.Visible = not flyPanel.Visible
 end)
 
-CreateToggle(PlayerTab, "Freeze My Character", function(state) Settings.FreezeSelf = state end)
+CreateToggle(PlayerTab, "Freeze My Character", function(state)
+    Settings.FreezeSelf = state
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if state then
+        if hrp then hrp.Anchored = true end
+        if hum then
+            hum.PlatformStand = true
+            -- Отключаем все состояния движения
+            for _, st in ipairs({
+                Enum.HumanoidStateType.Running,
+                Enum.HumanoidStateType.RunningNoPhysics,
+                Enum.HumanoidStateType.Jumping,
+                Enum.HumanoidStateType.FallingDown,
+                Enum.HumanoidStateType.Freefall,
+                Enum.HumanoidStateType.Climbing,
+                Enum.HumanoidStateType.Swimming,
+                Enum.HumanoidStateType.GettingUp,
+                Enum.HumanoidStateType.Landed,
+                Enum.HumanoidStateType.Seated,
+                Enum.HumanoidStateType.Physics,
+                Enum.HumanoidStateType.PlatformStanding,
+                Enum.HumanoidStateType.Ragdoll,
+                Enum.HumanoidStateType.StrafingNoPhysics,
+                Enum.HumanoidStateType.Flying
+            }) do
+                pcall(function() hum:SetStateEnabled(st, false) end)
+            end
+        end
+    else
+        if hrp then hrp.Anchored = false end
+        if hum then
+            hum.PlatformStand = false
+            -- Включаем все состояния обратно
+            for _, st in ipairs({
+                Enum.HumanoidStateType.Running,
+                Enum.HumanoidStateType.RunningNoPhysics,
+                Enum.HumanoidStateType.Jumping,
+                Enum.HumanoidStateType.FallingDown,
+                Enum.HumanoidStateType.Freefall,
+                Enum.HumanoidStateType.Climbing,
+                Enum.HumanoidStateType.Swimming,
+                Enum.HumanoidStateType.GettingUp,
+                Enum.HumanoidStateType.Landed,
+                Enum.HumanoidStateType.Seated,
+                Enum.HumanoidStateType.Physics,
+                Enum.HumanoidStateType.PlatformStanding,
+                Enum.HumanoidStateType.Ragdoll,
+                Enum.HumanoidStateType.StrafingNoPhysics,
+                Enum.HumanoidStateType.Flying
+            }) do
+                pcall(function() hum:SetStateEnabled(st, true) end)
+            end
+        end
+    end
+end)
 
 -- Invisible platform (Anti-Void)
 do

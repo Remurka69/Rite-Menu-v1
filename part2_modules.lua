@@ -371,24 +371,12 @@ local function hbe_createBar(p)
 
         local bg = Instance.new("BillboardGui")
         bg.Name = "HealthBarESP"
-        bg.Size = UDim2.new(6, 0, 1.8, 0)
+        bg.Size = UDim2.new(6, 0, 0.9, 0)
         bg.StudsOffset = Vector3.new(0, 5.25, 0)
         bg.AlwaysOnTop = true
         bg.Adornee = hrp
         bg.Parent = hrp
         bg.LightInfluence = 0
-
-        local nameLabel = Instance.new("TextLabel", bg)
-        nameLabel.Name = "NameLabel"
-        nameLabel.Size = UDim2.new(1, 0, 0.3, 0)
-        nameLabel.Position = UDim2.new(0, 0, 0, 0)
-        nameLabel.BackgroundTransparency = 1
-        nameLabel.TextColor3 = Theme.Lavender
-        nameLabel.Font = FontMain
-        nameLabel.TextScaled = true
-        nameLabel.TextStrokeTransparency = 0.4
-        nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-        nameLabel.Text = p.Name
 
         local bgFrame = Instance.new("Frame", bg)
         bgFrame.Name = "BarContainer"

@@ -338,19 +338,21 @@ end
          end
      end)
  end
- -- Health Bars, Rainbow, AutoJump, WallHop, TP Player, TP Mouse, Aimbot FOV
+-- Health Bars ESP (Исправленная и оптимизированная версия)
 do
 local HealthBarsESPModule = {}
 local hbe_conn, hbe_espBars = nil, {}
+
 local function hbe_getHealthColor(hp)
     if hp <= 0.1 then
-        return Color3.fromRGB(230, 90, 90) -- Красный (10% и менее)
+        return Color3.fromRGB(230, 90, 90) -- Красный
     elseif hp <= 0.5 then
-        return Color3.fromRGB(255, 210, 100) -- Жёлтый (от 10% до 50%)
+        return Color3.fromRGB(255, 210, 100) -- Жёлтый
     else
-        return Color3.fromRGB(100, 220, 100) -- Зелёный (свыше 50%)
+        return Color3.fromRGB(100, 220, 100) -- Зелёный
     end
 end
+
 local function hbe_createBar(p)
     if p == player then return end
     local function cleanup()
@@ -359,66 +361,79 @@ local function hbe_createBar(p)
             hbe_espBars[p] = nil
         end
     end
+    
     local function setupBar()
         cleanup()
         if not p.Character then return end
         local hrp = p.Character:FindFirstChild("HumanoidRootPart")
         local hum = p.Character:FindFirstChildOfClass("Humanoid")
         if not hrp or not hum then return end
-        
+
         local bg = Instance.new("BillboardGui")
         bg.Name = "HealthBarESP"
-        bg.Size = UDim2.new(0, 100, 0, 28)
-        bg.StudsOffset = Vector3.new(0, 3, 0)
+        
+        -- ГЛАВНОЕ ИСПРАВЛЕНИЕ: Используем Studs (Scale) вместо пикселей (Offset).
+        -- 5 стамов в ширину, 1.2 в высоту (с учетом места для ника).
+        bg.Size = UDim2.new(5, 0, 1.2, 0) 
+        bg.StudsOffset = Vector3.new(0, 3.5, 0) -- Чуть выше головы
         bg.AlwaysOnTop = true
         bg.Adornee = hrp
         bg.Parent = hrp
-        
-        -- UIScale для динамического масштабирования в зависимости от дистанции
-        local uiScale = Instance.new("UIScale", bg)
-        
-        local bgFrame = Instance.new("Frame", bg)
-        bgFrame.Size = UDim2.new(1, 0, 0, 10)
-        bgFrame.Position = UDim2.new(0, 0, 0, 14)
-        bgFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        bgFrame.BackgroundTransparency = 0.3
-        bgFrame.BorderSizePixel = 0
-        Instance.new("UICorner", bgFrame).CornerRadius = UDim.new(0, 3)
-        
-        local stroke = Instance.new("UIStroke", bgFrame)
-        stroke.Color = Theme.Lavender
-        stroke.Thickness = 1
-        stroke.Transparency = 0.4
-        
-        local fill = Instance.new("Frame", bgFrame)
-        fill.Size = UDim2.new(1, 0, 1, 0)
-        fill.BackgroundColor3 = Color3.fromRGB(100, 220, 100)
-        fill.BorderSizePixel = 0
-        Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 3)
-        
-        local hpText = Instance.new("TextLabel", bgFrame)
-        hpText.Size = UDim2.new(1, 0, 1, 0)
-        hpText.BackgroundTransparency = 1
-        hpText.TextColor3 = Color3.fromRGB(255, 255, 255)
-        hpText.Font = FontMain
-        hpText.TextSize = 9
-        hpText.TextStrokeTransparency = 0.3
-        hpText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-        hpText.Text = "100%"
-        
+        bg.LightInfluence = 0 -- Чтобы ESP было видно в темноте
+
+        -- Имя игрока (сверху)
         local nameLabel = Instance.new("TextLabel", bg)
-        nameLabel.Size = UDim2.new(1, 0, 0, 12)
+        nameLabel.Name = "NameLabel"
+        nameLabel.Size = UDim2.new(1, 0, 0.3, 0) -- 0.3 стама высотой
         nameLabel.Position = UDim2.new(0, 0, 0, 0)
         nameLabel.BackgroundTransparency = 1
         nameLabel.TextColor3 = Theme.Lavender
         nameLabel.Font = FontMain
-        nameLabel.TextSize = 11
+        nameLabel.TextScaled = true -- Текст сам подстроится под размер
         nameLabel.TextStrokeTransparency = 0.4
         nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
         nameLabel.Text = p.Name
-        
-        hbe_espBars[p] = {gui = bg, fill = fill, hpText = hpText, uiScale = uiScale}
+
+        -- Контейнер для самой полоски
+        local bgFrame = Instance.new("Frame", bg)
+        bgFrame.Name = "BarContainer"
+        bgFrame.Size = UDim2.new(1, 0, 0.25, 0) -- 100% ширины (5 стамов), 0.25 стама высотой
+        bgFrame.Position = UDim2.new(0, 0, 0.45, 0) -- Позиция под именем
+        bgFrame.AnchorPoint = Vector2.new(0, 0.5)
+        bgFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+        bgFrame.BackgroundTransparency = 0.2
+        bgFrame.BorderSizePixel = 0
+        Instance.new("UICorner", bgFrame).CornerRadius = UDim.new(0, 0.1) -- Скругление в стамах
+
+        local stroke = Instance.new("UIStroke", bgFrame)
+        stroke.Color = Theme.Lavender
+        stroke.Thickness = 1.5
+        stroke.Transparency = 0.4
+
+        -- Заполнение здоровья
+        local fill = Instance.new("Frame", bgFrame)
+        fill.Name = "Fill"
+        fill.Size = UDim2.new(1, 0, 1, 0)
+        fill.BackgroundColor3 = Color3.fromRGB(100, 220, 100)
+        fill.BorderSizePixel = 0
+        Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 0.1)
+
+        -- Текст с процентами
+        local hpText = Instance.new("TextLabel", bgFrame)
+        hpText.Name = "HpText"
+        hpText.Size = UDim2.new(1, 0, 1, 0)
+        hpText.BackgroundTransparency = 1
+        hpText.TextColor3 = Color3.fromRGB(255, 255, 255)
+        hpText.Font = FontMain
+        hpText.TextScaled = true
+        hpText.TextStrokeTransparency = 0.3
+        hpText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        hpText.Text = "100%"
+
+        -- Сохраняем ссылки для быстрого доступа в цикле
+        hbe_espBars[p] = {gui = bg, fill = fill, hpText = hpText}
     end
+    
     setupBar()
     p.CharacterAdded:Connect(setupBar)
 end
@@ -426,6 +441,7 @@ end
 function HealthBarsESPModule:Enable()
     if hbe_conn then return end
     for _, p in ipairs(Players:GetPlayers()) do hbe_createBar(p) end
+    
     local addConn = Players.PlayerAdded:Connect(hbe_createBar)
     local removeConn = Players.PlayerRemoving:Connect(function(p)
         if hbe_espBars[p] then
@@ -433,23 +449,18 @@ function HealthBarsESPModule:Enable()
             hbe_espBars[p] = nil
         end
     end)
+    
+    -- ОПТИМИЗАЦИЯ: Убрали вычисление дистанции и UIScale из цикла!
+    -- Теперь цикл обновляет только HP, что намного меньше грузит FPS.
     local updConn = RunService.RenderStepped:Connect(function()
-        local cam = workspace.CurrentCamera
-        if not cam then return end
         for p, data in pairs(hbe_espBars) do
             if p.Character then
                 local hum = p.Character:FindFirstChildOfClass("Humanoid")
-                local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-                if hum and hrp and data.fill and data.hpText and data.uiScale then
+                if hum and data.fill and data.hpText then
                     local hp = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
                     data.fill.Size = UDim2.new(hp, 0, 1, 0)
                     data.fill.BackgroundColor3 = hbe_getHealthColor(hp)
                     data.hpText.Text = math.floor(hp * 100) .. "%"
-                    
-                    -- Масштабирование полоски в зависимости от расстояния до камеры
-                    local dist = (cam.CFrame.Position - hrp.Position).Magnitude
-                    local scale = math.clamp(50 / dist, 0.25, 1.25) -- 50 стамов = нормальный размер
-                    data.uiScale.Scale = scale
                 end
             end
         end
@@ -471,6 +482,7 @@ end
 CreateToggle(VisualsTab, "Health Bars ESP", function(state)
     if state then HealthBarsESPModule:Enable() else HealthBarsESPModule:Disable() end
 end)
+end
 
     local rc_conn, rc_hue = nil, 0
      CreateToggle(PlayerTab, "Rainbow Character (Visible only to you)", function(state)

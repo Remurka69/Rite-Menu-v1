@@ -280,7 +280,7 @@ local function disableAllFeatures()
     Settings.SpeedBoost = false
     Settings.VehicleFly = false
     
-    -- Восстанавливаем нормальные значения (каждая операция в отдельном pcall)
+    -- Восстанавливаем Humanoid
     pcall(function()
         if player.Character and player.Character.Parent then
             local hum = player.Character:FindFirstChildOfClass("Humanoid")
@@ -288,52 +288,109 @@ local function disableAllFeatures()
                 hum.WalkSpeed = 16
                 hum.JumpPower = 50
                 hum.PlatformStand = false
+                hum.CameraOffset = Vector3.new(0, 0, 0)
+                hum.UseJumpPower = true
             end
         end
     end)
     
+    -- Восстанавливаем HumanoidRootPart и CanCollide (для Noclip)
     pcall(function()
         if player.Character and player.Character.Parent then
             local hrp = player.Character:FindFirstChild("HumanoidRootPart")
             if hrp and hrp.Parent then
                 hrp.Anchored = false
+                hrp.Velocity = Vector3.new(0, 0, 0)
+                hrp.RotVelocity = Vector3.new(0, 0, 0)
+            end
+            for _, part in ipairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
             end
         end
     end)
     
-    pcall(function()
-        workspace.Gravity = 196.2
-    end)
+    -- Восстанавливаем Gravity
+    pcall(function() workspace.Gravity = 196.2 end)
     
+    -- Восстанавливаем Camera
     pcall(function()
         camera.CameraType = Enum.CameraType.Custom
+        camera.FieldOfView = 70
     end)
     
-    pcall(function()
-        player.CameraMaxZoomDistance = 128
-    end)
+    -- Восстанавливаем CameraMaxZoomDistance
+    pcall(function() player.CameraMaxZoomDistance = 128 end)
     
+    -- Восстанавливаем Lighting
     pcall(function()
         Lighting.Ambient = Color3.new(0.5, 0.5, 0.5)
         Lighting.OutdoorAmbient = Color3.new(0.5, 0.5, 0.5)
         Lighting.Brightness = 1
         Lighting.GlobalShadows = true
+        Lighting.FogEnd = 100000
+        Lighting.FogStart = 0
     end)
     
-    -- Очищаем ESP и Chams
+    -- Очищаем Tracers и Chams
     pcall(function()
         if _G.TracersList then
             for _, line in pairs(_G.TracersList) do pcall(function() line:Destroy() end) end
             _G.TracersList = {}
         end
     end)
-    
     pcall(function()
         if _G.Skeletons then
             for _, skeleton in pairs(_G.Skeletons) do
                 for _, line in pairs(skeleton) do pcall(function() line:Destroy() end) end
             end
             _G.Skeletons = {}
+        end
+    end)
+    
+    -- Удаляем ESP, HealthBars, Distance ESP со всех персонажей
+    pcall(function()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Character then
+                for _, obj in ipairs(p.Character:GetDescendants()) do
+                    if obj:IsA("BillboardGui") and (obj.Name == "HealthBarESP" or obj.Name == "DistanceESP") then
+                        obj:Destroy()
+                    end
+                end
+            end
+        end
+    end)
+    
+    -- Очищаем ESP folder
+    pcall(function()
+        for _, child in ipairs(Ctx.Gui.ScreenGui:GetChildren()) do
+            if child:IsA("Folder") then child:ClearAllChildren() end
+        end
+    end)
+    
+    -- Удаляем Invisible Platform
+    pcall(function()
+        local platform = workspace:FindFirstChild("ClientAntiVoidPlatform")
+        if platform then platform:Destroy() end
+    end)
+    
+    -- Удаляем WaterWalk платформы
+    pcall(function()
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj.Name == "WaterWalkPlatform" then obj:Destroy() end
+        end
+    end)
+    
+    -- Удаляем VehicleFly объекты
+    pcall(function()
+        for _, seat in ipairs(workspace:GetDescendants()) do
+            if seat:IsA("VehicleSeat") or seat:IsA("Seat") then
+                local gyro = seat:FindFirstChild("VehicleFlyGyro")
+                local vel = seat:FindFirstChild("VehicleFlyVelocity")
+                if gyro then gyro:Destroy() end
+                if vel then vel:Destroy() end
+            end
         end
     end)
     

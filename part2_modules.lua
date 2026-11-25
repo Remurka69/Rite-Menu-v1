@@ -338,18 +338,18 @@ end
          end
      end)
  end
--- Health Bars ESP (Исправленная и оптимизированная версия)
+-- Health Bars ESP (Исправленная), Rainbow, AutoJump, WallHop, TP Player, TP Mouse, Aimbot FOV
 do
 local HealthBarsESPModule = {}
 local hbe_conn, hbe_espBars = nil, {}
 
 local function hbe_getHealthColor(hp)
     if hp <= 0.1 then
-        return Color3.fromRGB(230, 90, 90) -- Красный
+        return Color3.fromRGB(230, 90, 90)
     elseif hp <= 0.5 then
-        return Color3.fromRGB(255, 210, 100) -- Жёлтый
+        return Color3.fromRGB(255, 210, 100)
     else
-        return Color3.fromRGB(100, 220, 100) -- Зелёный
+        return Color3.fromRGB(100, 220, 100)
     end
 end
 
@@ -371,46 +371,40 @@ local function hbe_createBar(p)
 
         local bg = Instance.new("BillboardGui")
         bg.Name = "HealthBarESP"
-        
-        -- ГЛАВНОЕ ИСПРАВЛЕНИЕ: Используем Studs (Scale) вместо пикселей (Offset).
-        -- 5 стамов в ширину, 1.2 в высоту (с учетом места для ника).
-        bg.Size = UDim2.new(5, 0, 1.2, 0) 
-        bg.StudsOffset = Vector3.new(0, 3.5, 0) -- Чуть выше головы
+        bg.Size = UDim2.new(5, 0, 1.2, 0)
+        bg.StudsOffset = Vector3.new(0, 3.5, 0)
         bg.AlwaysOnTop = true
         bg.Adornee = hrp
         bg.Parent = hrp
-        bg.LightInfluence = 0 -- Чтобы ESP было видно в темноте
+        bg.LightInfluence = 0
 
-        -- Имя игрока (сверху)
         local nameLabel = Instance.new("TextLabel", bg)
         nameLabel.Name = "NameLabel"
-        nameLabel.Size = UDim2.new(1, 0, 0.3, 0) -- 0.3 стама высотой
+        nameLabel.Size = UDim2.new(1, 0, 0.3, 0)
         nameLabel.Position = UDim2.new(0, 0, 0, 0)
         nameLabel.BackgroundTransparency = 1
         nameLabel.TextColor3 = Theme.Lavender
         nameLabel.Font = FontMain
-        nameLabel.TextScaled = true -- Текст сам подстроится под размер
+        nameLabel.TextScaled = true
         nameLabel.TextStrokeTransparency = 0.4
         nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
         nameLabel.Text = p.Name
 
-        -- Контейнер для самой полоски
         local bgFrame = Instance.new("Frame", bg)
         bgFrame.Name = "BarContainer"
-        bgFrame.Size = UDim2.new(1, 0, 0.25, 0) -- 100% ширины (5 стамов), 0.25 стама высотой
-        bgFrame.Position = UDim2.new(0, 0, 0.45, 0) -- Позиция под именем
+        bgFrame.Size = UDim2.new(1, 0, 0.25, 0)
+        bgFrame.Position = UDim2.new(0, 0, 0.45, 0)
         bgFrame.AnchorPoint = Vector2.new(0, 0.5)
         bgFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
         bgFrame.BackgroundTransparency = 0.2
         bgFrame.BorderSizePixel = 0
-        Instance.new("UICorner", bgFrame).CornerRadius = UDim.new(0, 0.1) -- Скругление в стамах
+        Instance.new("UICorner", bgFrame).CornerRadius = UDim.new(0, 0.1)
 
         local stroke = Instance.new("UIStroke", bgFrame)
         stroke.Color = Theme.Lavender
         stroke.Thickness = 1.5
         stroke.Transparency = 0.4
 
-        -- Заполнение здоровья
         local fill = Instance.new("Frame", bgFrame)
         fill.Name = "Fill"
         fill.Size = UDim2.new(1, 0, 1, 0)
@@ -418,7 +412,6 @@ local function hbe_createBar(p)
         fill.BorderSizePixel = 0
         Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 0.1)
 
-        -- Текст с процентами
         local hpText = Instance.new("TextLabel", bgFrame)
         hpText.Name = "HpText"
         hpText.Size = UDim2.new(1, 0, 1, 0)
@@ -430,7 +423,6 @@ local function hbe_createBar(p)
         hpText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
         hpText.Text = "100%"
 
-        -- Сохраняем ссылки для быстрого доступа в цикле
         hbe_espBars[p] = {gui = bg, fill = fill, hpText = hpText}
     end
     
@@ -450,8 +442,6 @@ function HealthBarsESPModule:Enable()
         end
     end)
     
-    -- ОПТИМИЗАЦИЯ: Убрали вычисление дистанции и UIScale из цикла!
-    -- Теперь цикл обновляет только HP, что намного меньше грузит FPS.
     local updConn = RunService.RenderStepped:Connect(function()
         for p, data in pairs(hbe_espBars) do
             if p.Character then
@@ -482,88 +472,94 @@ end
 CreateToggle(VisualsTab, "Health Bars ESP", function(state)
     if state then HealthBarsESPModule:Enable() else HealthBarsESPModule:Disable() end
 end)
-end
 
-    local rc_conn, rc_hue = nil, 0
-     CreateToggle(PlayerTab, "Rainbow Character (Visible only to you)", function(state)
-         if state then
-             if rc_conn then return end
-             rc_conn = RunService.RenderStepped:Connect(function(dt)
-                 rc_hue = (rc_hue + dt * 0.2) % 1
-                 local char = player.Character
-                 if char then
-                     for _, part in pairs(char:GetDescendants()) do
-                         if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then part.Color = Color3.fromHSV(rc_hue, 1, 1) end
-                     end
-                 end
-             end)
-         elseif rc_conn then rc_conn:Disconnect(); rc_conn = nil end
-     end)
-     local aj_conn
-     CreateToggle(MovementTab, "Auto Jump", function(state)
-         if state then
-             if aj_conn then return end
-             aj_conn = RunService.Heartbeat:Connect(function()
-                 local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-                 if hum and hum.FloorMaterial ~= Enum.Material.Air then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
-             end)
-         elseif aj_conn then aj_conn:Disconnect(); aj_conn = nil end
-     end)
-     local wh_conn
-     CreateToggle(MovementTab, "Wall Hop", function(state)
-         if state then
-             if wh_conn then return end
-             wh_conn = RunService.Heartbeat:Connect(function()
-                 local char = player.Character
-                 local hum = char and char:FindFirstChildOfClass("Humanoid")
-                 local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                 if hum and hrp then
-                     local params = RaycastParams.new(); params.FilterDescendantsInstances = {char}
-                     local res = workspace:Raycast(hrp.Position, hrp.CFrame.LookVector * 2, params)
-                     if hum.FloorMaterial == Enum.Material.Air and res then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
-                 end
-             end)
-         elseif wh_conn then wh_conn:Disconnect(); wh_conn = nil end
-     end)
-     CreatePlayerListDropdown(MovementTab, "Teleport to Player", function(selectedName)
-         local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-         local target = Players:FindFirstChild(selectedName)
-         local tHrp = target and target.Character and target.Character:FindFirstChild("HumanoidRootPart")
-         if hrp and tHrp then hrp.CFrame = tHrp.CFrame * CFrame.new(0, 0, -5) end
-     end)
-     local ttm_conn
-     CreateToggle(MovementTab, "Teleport to Mouse (LMB)", function(state)
-         if state then
-             if ttm_conn then return end
-             ttm_conn = UserInputService.InputBegan:Connect(function(input, gp)
-                 if not gp and input.UserInputType == Enum.UserInputType.MouseButton1 then
-                     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                     local mouse = player:GetMouse()
-                     if hrp and mouse and mouse.Hit then hrp.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0)) end
-                 end
-             end)
-         elseif ttm_conn then ttm_conn:Disconnect(); ttm_conn = nil end
-     end)
-     local af_conn, af_circle, af_radius = nil, nil, 150
-     CreateToggle(CombatTab, "Show Aimbot FOV Circle", function(state)
-         if state then
-             if af_conn or not Drawing then return end
-             af_circle = Drawing.new("Circle")
-             af_circle.Thickness = 1; af_circle.NumSides = 60; af_circle.Radius = af_radius; af_circle.Filled = false; af_circle.Color = Theme.Lavender; af_circle.Visible = true; af_circle.Transparency = 0.8
-             af_conn = RunService.RenderStepped:Connect(function()
-                 local cam = workspace.CurrentCamera
-                 if cam and af_circle then af_circle.Position = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2) end
-             end)
-         else
-             if af_conn then af_conn:Disconnect(); af_conn = nil end
-             if af_circle then af_circle:Remove(); af_circle = nil end
-         end
-     end)
-     CreateSlider(CombatTab, "FOV Circle Radius", 50, 400, 150, function(v)
-         af_radius = v
-         if af_circle then af_circle.Radius = v end
-     end)
- end
+local rc_conn, rc_hue = nil, 0
+CreateToggle(PlayerTab, "Rainbow Character (Visible only to you)", function(state)
+    if state then
+        if rc_conn then return end
+        rc_conn = RunService.RenderStepped:Connect(function(dt)
+            rc_hue = (rc_hue + dt * 0.2) % 1
+            local char = player.Character
+            if char then
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then part.Color = Color3.fromHSV(rc_hue, 1, 1) end
+                end
+            end
+        end)
+    elseif rc_conn then rc_conn:Disconnect(); rc_conn = nil end
+end)
+
+local aj_conn
+CreateToggle(MovementTab, "Auto Jump", function(state)
+    if state then
+        if aj_conn then return end
+        aj_conn = RunService.Heartbeat:Connect(function()
+            local hum = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum.FloorMaterial ~= Enum.Material.Air then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+        end)
+    elseif aj_conn then aj_conn:Disconnect(); aj_conn = nil end
+end)
+
+local wh_conn
+CreateToggle(MovementTab, "Wall Hop", function(state)
+    if state then
+        if wh_conn then return end
+        wh_conn = RunService.Heartbeat:Connect(function()
+            local char = player.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hum and hrp then
+                local params = RaycastParams.new(); params.FilterDescendantsInstances = {char}
+                local res = workspace:Raycast(hrp.Position, hrp.CFrame.LookVector * 2, params)
+                if hum.FloorMaterial == Enum.Material.Air and res then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+            end
+        end)
+    elseif wh_conn then wh_conn:Disconnect(); wh_conn = nil end
+end)
+
+CreatePlayerListDropdown(MovementTab, "Teleport to Player", function(selectedName)
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    local target = Players:FindFirstChild(selectedName)
+    local tHrp = target and target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+    if hrp and tHrp then hrp.CFrame = tHrp.CFrame * CFrame.new(0, 0, -5) end
+end)
+
+local ttm_conn
+CreateToggle(MovementTab, "Teleport to Mouse (LMB)", function(state)
+    if state then
+        if ttm_conn then return end
+        ttm_conn = UserInputService.InputBegan:Connect(function(input, gp)
+            if not gp and input.UserInputType == Enum.UserInputType.MouseButton1 then
+                local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                local mouse = player:GetMouse()
+                if hrp and mouse and mouse.Hit then hrp.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0)) end
+            end
+        end)
+    elseif ttm_conn then ttm_conn:Disconnect(); ttm_conn = nil end
+end)
+
+local af_conn, af_circle, af_radius = nil, nil, 150
+CreateToggle(CombatTab, "Show Aimbot FOV Circle", function(state)
+    if state then
+        if af_conn or not Drawing then return end
+        af_circle = Drawing.new("Circle")
+        af_circle.Thickness = 1; af_circle.NumSides = 60; af_circle.Radius = af_radius; af_circle.Filled = false; af_circle.Color = Theme.Lavender; af_circle.Visible = true; af_circle.Transparency = 0.8
+        af_conn = RunService.RenderStepped:Connect(function()
+            local cam = workspace.CurrentCamera
+            if cam and af_circle then af_circle.Position = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2) end
+        end)
+    else
+        if af_conn then af_conn:Disconnect(); af_conn = nil end
+        if af_circle then af_circle:Remove(); af_circle = nil end
+    end
+end)
+
+CreateSlider(CombatTab, "FOV Circle Radius", 50, 400, 150, function(v)
+    af_radius = v
+    if af_circle then af_circle.Radius = v end
+end)
+end
+ 
  -- Crosshair, Distance ESP, Copy
  do
      local ch_cfg = { Gap = 6, Length = 10, Thickness = 2, Color = Theme.Lavender }

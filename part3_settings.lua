@@ -248,18 +248,22 @@ end
             end)
         end)
 
-        UserInputService.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.Keyboard then
-                if input.KeyCode == MenuToggleKey then
-                    MainFrame.Visible = not MainFrame.Visible
-                    OpenBtn.Visible = not MainFrame.Visible
-                elseif PanicEnabled and input.KeyCode == PanicKey then
-                    MainFrame.Visible = false
-                    OpenBtn.Visible = false
-                    if Ctx.Notify then Ctx.Notify("Panic", "Все функции отключены!", 2, "error") end
-                end
+UserInputService.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == MenuToggleKey then
+            MainFrame.Visible = not MainFrame.Visible
+            OpenBtn.Visible = not MainFrame.Visible
+        elseif PanicEnabled and input.KeyCode == PanicKey then
+            MainFrame.Visible = false
+            OpenBtn.Visible = false
+            -- Вызываем функцию отключения всех функций
+            if Ctx.DisableAllFeatures then
+                Ctx.DisableAllFeatures()
             end
-        end)
+            if Ctx.Notify then Ctx.Notify("Panic", "Все функции отключены!", 2, "error") end
+        end
+    end
+end)
 
         CreateSlider(SettingsPage, "Notify Duration", 1, 10, 3, function(v) NotifyDuration = v end)
         local OldNotify = Ctx.Notify

@@ -1127,4 +1127,86 @@ do
     end)
 end
 
+    -- Follow Behind Player (телепортация и полёт сзади выбранного игрока)
+do
+    local followTarget = nil
+    local followConnection = nil
+    local followDistance = 5
+    local followHeight = 3
+    local followEnabled = false
+    local savedNoclip = nil
+
+    CreatePlayerListDropdown(MovementTab, "Follow Target", function(name)
+        followTarget = Players:FindFirstChild(name)
+        if Ctx.Notify then
+            Ctx.Notify("Follow", "Цель: " .. (name or "не выбрана"), 2, "info")
+        end
+    end)
+
+    CreateToggle(MovementTab, "Follow Behind Player", function(state)
+        followEnabled = state
+        if state then
+            if followConnection then followConnection:Disconnect() end
+            -- Сохраняем состояние noclip и включаем его, чтобы не застревать в стенах
+            savedNoclip = Settings.Noclip
+            Settings.Noclip = true
+
+            followConnection = RunService.Heartbeat:Connect(function()
+                local myChar = player.Character
+                local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+
+                -- Проверяем цель (игрок мог выйти)
+                if not followTarget or not followTarget.Parent then
+                    followTarget = nil
+                    return
+                end
+
+                local targetChar = followTarget.Character
+                local targetHRP = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+
+                if myHRP and targetHRP then
+                    -- CFrame цели * смещение: вверх на followHeight, назад на followDistance
+                    local offset = CFrame.new(0, followHeight, -followDistance)
+                    myHRP.CFrame = targetHRP.CFrame * offset
+                    -- Обнуляем скорость, чтобы не было инерции/падения
+                    myHRP.Velocity = Vector3.new(0, 0, 0)
+                    myHRP.RotVelocity = Vector3.new(0, 0, 0)
+                    -- Отключаем гравитацию на персонаже через PlatformStand
+                    if myHum then myHum.PlatformStand = true end
+                end
+            end)
+
+            if Ctx.Notify then
+                Ctx.Notify("Follow", "Режим активирован", 2, "success")
+            end
+        else
+            if followConnection then
+                followConnection:Disconnect()
+                followConnection = nil
+            end
+            -- Возвращаем noclip в исходное состояние
+            if savedNoclip ~= nil then
+                Settings.Noclip = savedNoclip
+                savedNoclip = nil
+            end
+            local myChar = player.Character
+            local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+            if myHum then myHum.PlatformStand = false end
+
+            if Ctx.Notify then
+                Ctx.Notify("Follow", "Режим деактивирован", 2, "info")
+            end
+        end
+    end)
+
+    CreateSlider(MovementTab, "Follow Distance", 1, 20, 5, function(v)
+        followDistance = v
+    end)
+
+    CreateSlider(MovementTab, "Follow Height", 0, 10, 3, function(v)
+        followHeight = v
+    end)
+end
+    
 end

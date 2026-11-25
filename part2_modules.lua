@@ -374,10 +374,11 @@ end
     end
 
     -- Health Bars, Rainbow, AutoJump, WallHop, TP Player, TP Mouse, Aimbot FOV
-local HealthBarsESPModule = {}
-local hbe_conn, hbe_espBars = nil, {}
+do
+    local HealthBarsESPModule = {}
+    local hbe_conn, hbe_espBars = nil, {}
 
-local function hbe_getHealthColor(hp)
+    local function hbe_getHealthColor(hp)
     -- Плавный градиент: красный (0%) → жёлтый (50%) → зелёный (100%)
     if hp >= 0.5 then
         -- От жёлтого к зелёному

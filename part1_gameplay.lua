@@ -762,7 +762,7 @@ do
     Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 6)
 
     local Label = Instance.new("TextLabel", Container)
-    Label.Size = UDim2.new(1, -60, 1, 0)
+    UDim2.new(1, -60, 0, HEADER_H)
     Label.Position = UDim2.new(0, 12, 0, 0)
     Label.BackgroundTransparency = 1
     Label.Text = "Speed Boost on Key"
@@ -773,7 +773,7 @@ do
 
     local Switch = Instance.new("TextButton", Container)
     Switch.Size = UDim2.new(0, 36, 0, 20)
-    Switch.Position = UDim2.new(1, -48, 0.5, -10)
+    UDim2.new(1, -48, 0, 9)
     Switch.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
     Switch.Text = ""
     Switch.ZIndex = 10

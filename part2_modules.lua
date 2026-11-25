@@ -593,7 +593,7 @@ end)
             af_radius = v
             if af_circle then af_circle.Radius = v end
         end)
-    end
+end
 
     -- Crosshair, Distance ESP, Copy
     do

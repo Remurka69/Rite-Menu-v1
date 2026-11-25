@@ -398,7 +398,7 @@ local function hbe_createBar(p)
         bgFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
         bgFrame.BackgroundTransparency = 0.2
         bgFrame.BorderSizePixel = 0
-        Instance.new("UICorner", bgFrame).CornerRadius = UDim.new(0, 0.2)
+        Instance.new("UICorner", bgFrame).CornerRadius = UDim.new(0, 8)
 
         local stroke = Instance.new("UIStroke", bgFrame)
         stroke.Color = Theme.Lavender
@@ -410,7 +410,7 @@ local function hbe_createBar(p)
         fill.Size = UDim2.new(1, 0, 1, 0)
         fill.BackgroundColor3 = Color3.fromRGB(100, 220, 100)
         fill.BorderSizePixel = 0
-        Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 0.2)
+        Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 8)
 
         local hpText = Instance.new("TextLabel", bgFrame)
         hpText.Name = "HpText"

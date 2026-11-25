@@ -484,6 +484,77 @@ local function rc_restoreColors()
     rc_originalColors = {}
 end
 
+  -- Invisible Character (Visible only to you)
+do
+local ic_conn, ic_charAddedConn = nil, nil
+local ic_originalTransparency = {}
+
+local function ic_saveTransparency()
+    local char = player.Character
+    if not char then return end
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and not ic_originalTransparency[part] then
+            ic_originalTransparency[part] = part.Transparency
+        end
+    end
+end
+
+local function ic_restoreTransparency()
+    for part, transparency in pairs(ic_originalTransparency) do
+        if part and part.Parent then
+            part.Transparency = transparency
+        end
+    end
+    ic_originalTransparency = {}
+end
+
+local function ic_makeInvisible()
+    local char = player.Character
+    if not char then return end
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            part.Transparency = 1
+        end
+    end
+end
+
+CreateToggle(PlayerTab, "Invisible Character (Visible only to you)", function(state)
+    if state then
+        if ic_conn then return end
+        ic_originalTransparency = {}
+        ic_saveTransparency()
+        ic_makeInvisible()
+        
+        -- Делаем новые части невидимыми при респауне
+        ic_charAddedConn = player.CharacterAdded:Connect(function()
+            task.wait(0.5) -- Ждём загрузки частей
+            ic_saveTransparency()
+            ic_makeInvisible()
+        end)
+        
+        -- Следим за появлением новых частей (например, при загрузке аксессуаров)
+        ic_conn = player.Character.DescendantAdded:Connect(function(descendant)
+            if descendant:IsA("BasePart") and descendant.Name ~= "HumanoidRootPart" then
+                if not ic_originalTransparency[descendant] then
+                    ic_originalTransparency[descendant] = descendant.Transparency
+                end
+                descendant.Transparency = 1
+            end
+        end)
+    else
+        if ic_conn then
+            ic_conn:Disconnect()
+            ic_conn = nil
+        end
+        if ic_charAddedConn then
+            ic_charAddedConn:Disconnect()
+            ic_charAddedConn = nil
+        end
+        ic_restoreTransparency()
+    end
+end)
+end
+  
 CreateToggle(PlayerTab, "Rainbow Character (Visible only to you)", function(state)
     if state then
         if rc_conn then return end

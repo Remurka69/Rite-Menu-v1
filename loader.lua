@@ -49,7 +49,9 @@ NoCameraBob = false, NoGrass = false, SpeedBoost = false
 Notify = nil,
 Tabs = {},
 UI = {},
-Gui = {}
+Gui = {},
+ActiveModules = {},
+RegisterModule = nil
 }
 local Theme = Ctx.Theme
 local FontMain = Ctx.FontMain
@@ -280,7 +282,19 @@ local function disableAllFeatures()
     Settings.SpeedBoost = false
     Settings.VehicleFly = false
     
-    -- Восстанавливаем Humanoid
+    -- Вызываем все зарегистрированные модули для отключения
+    print("[Rite Cheat] Отключаю зарегистрированные модули...")
+    for moduleName, disableFunc in pairs(Ctx.ActiveModules) do
+        pcall(function()
+            if type(disableFunc) == "function" then
+                disableFunc()
+                print("[Rite Cheat] ✓ Модуль '" .. moduleName .. "' отключён")
+            end
+        end)
+    end
+    Ctx.ActiveModules = {} -- Очищаем список после отключения
+    
+    -- Восстанавливаем нормальные значения
     pcall(function()
         if player.Character and player.Character.Parent then
             local hum = player.Character:FindFirstChildOfClass("Humanoid")
@@ -288,52 +302,30 @@ local function disableAllFeatures()
                 hum.WalkSpeed = 16
                 hum.JumpPower = 50
                 hum.PlatformStand = false
-                hum.CameraOffset = Vector3.new(0, 0, 0)
-                hum.UseJumpPower = true
             end
         end
     end)
     
-    -- Восстанавливаем HumanoidRootPart и CanCollide (для Noclip)
     pcall(function()
         if player.Character and player.Character.Parent then
             local hrp = player.Character:FindFirstChild("HumanoidRootPart")
             if hrp and hrp.Parent then
                 hrp.Anchored = false
-                hrp.Velocity = Vector3.new(0, 0, 0)
-                hrp.RotVelocity = Vector3.new(0, 0, 0)
-            end
-            for _, part in ipairs(player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = true
-                end
             end
         end
     end)
     
-    -- Восстанавливаем Gravity
     pcall(function() workspace.Gravity = 196.2 end)
-    
-    -- Восстанавливаем Camera
-    pcall(function()
-        camera.CameraType = Enum.CameraType.Custom
-        camera.FieldOfView = 70
-    end)
-    
-    -- Восстанавливаем CameraMaxZoomDistance
+    pcall(function() camera.CameraType = Enum.CameraType.Custom end)
     pcall(function() player.CameraMaxZoomDistance = 128 end)
-    
-    -- Восстанавливаем Lighting
     pcall(function()
         Lighting.Ambient = Color3.new(0.5, 0.5, 0.5)
         Lighting.OutdoorAmbient = Color3.new(0.5, 0.5, 0.5)
         Lighting.Brightness = 1
         Lighting.GlobalShadows = true
-        Lighting.FogEnd = 100000
-        Lighting.FogStart = 0
     end)
     
-    -- Очищаем Tracers и Chams
+    -- Очищаем ESP и Chams
     pcall(function()
         if _G.TracersList then
             for _, line in pairs(_G.TracersList) do pcall(function() line:Destroy() end) end
@@ -349,53 +341,15 @@ local function disableAllFeatures()
         end
     end)
     
-    -- Удаляем ESP, HealthBars, Distance ESP со всех персонажей
-    pcall(function()
-        for _, p in ipairs(Players:GetPlayers()) do
-            if p.Character then
-                for _, obj in ipairs(p.Character:GetDescendants()) do
-                    if obj:IsA("BillboardGui") and (obj.Name == "HealthBarESP" or obj.Name == "DistanceESP") then
-                        obj:Destroy()
-                    end
-                end
-            end
-        end
-    end)
-    
-    -- Очищаем ESP folder
-    pcall(function()
-        for _, child in ipairs(Ctx.Gui.ScreenGui:GetChildren()) do
-            if child:IsA("Folder") then child:ClearAllChildren() end
-        end
-    end)
-    
-    -- Удаляем Invisible Platform
-    pcall(function()
-        local platform = workspace:FindFirstChild("ClientAntiVoidPlatform")
-        if platform then platform:Destroy() end
-    end)
-    
-    -- Удаляем WaterWalk платформы
-    pcall(function()
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj.Name == "WaterWalkPlatform" then obj:Destroy() end
-        end
-    end)
-    
-    -- Удаляем VehicleFly объекты
-    pcall(function()
-        for _, seat in ipairs(workspace:GetDescendants()) do
-            if seat:IsA("VehicleSeat") or seat:IsA("Seat") then
-                local gyro = seat:FindFirstChild("VehicleFlyGyro")
-                local vel = seat:FindFirstChild("VehicleFlyVelocity")
-                if gyro then gyro:Destroy() end
-                if vel then vel:Destroy() end
-            end
-        end
-    end)
-    
     print("[Rite Cheat] ✓ Все функции успешно отключены")
     print("[Rite Cheat] Скрипт готов к проверке")
+end
+
+-- Регистрируем функцию RegisterModule в Ctx
+Ctx.RegisterModule = function(moduleName, disableFunc)
+    if moduleName and disableFunc then
+        Ctx.ActiveModules[moduleName] = disableFunc
+    end
 end
 
 -- Добавляем функцию в Ctx для доступа из других модулей
@@ -1325,5 +1279,5 @@ end
 print("[Loader] Все модули обработаны.")
 task.wait(0.5) -- Дать время UI обновиться
 if Ctx.Notify then
-Ctx.Notify("Rite Cheat", "TEST26Меню загружено! Приятной игры❤️.", 5, "success")
+Ctx.Notify("Rite Cheat", "TEST27Меню загружено! Приятной игры❤️.", 5, "success")
 end

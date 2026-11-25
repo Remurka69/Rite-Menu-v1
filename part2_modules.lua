@@ -324,7 +324,7 @@ return function(Ctx)
             if fp_conn then fp_conn:Disconnect(); fp_conn = nil end
             if fp_gui then fp_gui:Destroy(); fp_gui = nil end
         end
-        CreateToggle(VisualsTab, "Show FPS & Ping Overlay", function(state)
+        CreateToggle(MiscTab, "Show FPS & Ping Overlay", function(state)
             if state then FpsPingModule:Enable() else FpsPingModule:Disable() end
         end)
 

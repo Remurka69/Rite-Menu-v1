@@ -477,7 +477,7 @@ do
         for p, _ in pairs(_G.Skeletons) do clearCham(p) end
     end)
     ChamStyleDropdown.Visible = false
-    local skeletonParts = {"Head", "UpperTorso", "LowerTorso", "LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm", "RightHand", "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "RightUpperLeg", "RightLowerLeg", "RightFoot"}
+    local skeletonParts = {"Head", "UpperTorso", "LowerTorso", "Spine", "LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm", "RightHand", "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "RightUpperLeg", "RightLowerLeg", "RightFoot"}
     local boxParts = {"Head", "UpperTorso", "LowerTorso", "LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm", "RightHand", "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "RightUpperLeg", "RightLowerLeg", "RightFoot", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"}
     local function updateChams()
         if not Settings.Chams or not Drawing then return end
@@ -533,6 +533,7 @@ do
                         connect(cham.RightUpperLeg, gp("LowerTorso"), gp("RightUpperLeg"))
                         connect(cham.RightLowerLeg, gp("RightUpperLeg"), gp("RightLowerLeg"))
                         connect(cham.RightFoot, gp("RightLowerLeg"), gp("RightFoot"))
+                        connect(cham.Spine, gp("LowerTorso"), gp("UpperTorso"))
                     else
                         connect(cham.Head, gp("Head"), gp("Torso"))
                         connect(cham.LeftUpperArm, gp("Torso"), gp("Left Arm"))
@@ -564,6 +565,7 @@ do
                         end
                     end
                     if hasPart then
+                        local padding = 5
                         cham.Box.Position = Vector2.new(minX, minY)
                         cham.Box.Size = Vector2.new(maxX - minX, maxY - minY)
                         cham.Box.Visible = true

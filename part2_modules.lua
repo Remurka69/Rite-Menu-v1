@@ -776,11 +776,11 @@ local CrosshairColorModeDropdown = CreateDropdown(VisualsTab, "Crosshair Color",
         ["Theme"] = Theme.Lavender,
         ["Black"] = Color3.fromRGB(0, 0, 0),
         ["White"] = Color3.fromRGB(255, 255, 255),
-        ["Red"] = Color3.fromRGB(255, 80, 80),
+        ["Red"] = Color3.fromRGB(255, 20, 20),
         ["Green"] = Color3.fromRGB(80, 255, 120),
-        ["Yellow"] = Color3.fromRGB(255, 220, 80),
+        ["Yellow"] = Color3.fromRGB(255, 220, 50),
         ["Pink"] = Color3.fromRGB(255, 120, 180),
-        ["Blue"] = Color3.fromRGB(80, 160, 255)
+        ["Blue"] = Color3.fromRGB(20, 20, 255)
     }
     ch_cfg.Color = colorMap[mode] or Theme.Lavender
     if ch_conn then ch_create() end

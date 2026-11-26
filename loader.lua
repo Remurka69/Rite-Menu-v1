@@ -742,13 +742,18 @@ local CategoriesData = {
              {name = "Wall Hop", desc = "Прыжки от стен"},
              {name = "Teleport to Player", desc = "Телепорт к игроку по нику"},
              {name = "Teleport to Mouse", desc = "Телепорт по клику мыши"},
+            {name = "Follow Behind Player", desc = "Следование за выбранным игроком сзади"},
+            {name = "Speed Boost on Key", desc = "Ускорение при нажатии клавиши"},
+            {name = "Water Walk", desc = "Ходьба по воде с созданием платформы"},
+            {name = "Long Jump", desc = "Прыжок на большое расстояние"},
              {name = "Невидимая платформа", desc = "Создает невидимую платформу под ногами, чтобы не упасть в бездну"}
          }
      },
      Player = {
          name = "Player", icon = "👤", description = "Настройки персонажа",
          functions = {
-             {name = "Freeze My Character", desc = "Замораживает персонажа на месте"},
+             {name = "Freeze My Character (Visible only to you)", desc = "Замораживает персонажа на месте"},
+             {name = "Invisible Character (Visible only to you)", desc = "Делает персонажа невидимым (видно только тебе)"},
              {name = "Rainbow Character", desc = "Радужная окраска персонажа (Видно только тебе)"}
          }
      },
@@ -766,6 +771,8 @@ local CategoriesData = {
              {name = "Crosshair", desc = "Прицел в центре экрана"},
              {name = "Fullbright", desc = "Делает мир максимально ярким и убирает тени"},
              {name = "Disable Fog", desc = "Убирает туман, при выключении возвращает оригинальные настройки карты"},
+            {name = "No Camera Bob", desc = "Убирает покачивание камеры при ходьбе"},
+            {name = "No Grass", desc = "Убирает траву и кусты с карты"},
          }
      },
      World = {
@@ -813,11 +820,16 @@ local CategoriesData = {
          ["Wall Hop"] = "Jump off walls",
          ["Teleport to Player"] = "Teleport to a player by name",
          ["Teleport to Mouse"] = "Teleport to mouse click location",
+        [ "Follow Behind Player"] =  "Follow behind a selected player ",
+        [ "Speed Boost on Key" ] =  "Speed boost when pressing a key ",
+        [ "Water Walk"] =  "Walk on water by creating a platform ",
+        [ "Long Jump"] =  "Long distance jump ",
          ["Invisible platform"] = "Creates an invisible platform under your feet to prevent falling into the void"
      },
      Player = {
          description = "Character settings",
-         ["Freeze My Character"] = "Freezes the character in place",
+         ["Freeze My Character (Visible only to you) "] = "Freezes the character in place",
+         ["Invisible Character (Visible only to you) " ] =  "Makes character invisible",
          ["Rainbow Character"] = "Rainbow coloring of the character (Client-side only)"
      },
      Visuals = {
@@ -833,6 +845,8 @@ local CategoriesData = {
          ["Crosshair"] = "Crosshair in the center of the screen",
          ["Fullbright"] = "Makes the world fully bright and removes shadows",
          ["Disable Fog"] = "Removes fog, restores original map settings when turned off",
+         [ "No Camera Bob"] =  "Removes camera bobbing while walking ",
+         [ "No Grass"] =  "Removes grass and bushes from the map ",
      },
      World = {
          description = "World settings",
@@ -1185,5 +1199,5 @@ end
 print("[Loader] Все модули обработаны.")
 task.wait(0.5) -- Дать время UI обновиться
 if Ctx.Notify then
-Ctx.Notify("Rite Cheat", "TEST37Меню загружено! Приятной игры❤️.", 5, "success")
+Ctx.Notify("Rite Cheat", "TEST38Меню загружено! Приятной игры❤️.", 5, "success")
 end

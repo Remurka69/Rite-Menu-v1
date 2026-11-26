@@ -284,13 +284,24 @@ end
                  container.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
              end
          end)
-         fp_conn = RunService.RenderStepped:Connect(function()
-             frames = frames + 1
-             if tick() - lastT >= 1 then fps_val = frames; frames = 0; lastT = tick() end
-             fpsLabel.Text = "FPS: " .. fps_val
-             local ok, ping = pcall(function() return math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()) end)
-             pingLabel.Text = "Ping: " .. (ok and ping or "?") .. " ms"
-         end)
+fp_conn = RunService.RenderStepped:Connect(function()
+    frames = frames + 1
+    if tick() - lastT >= 1 then fps_val = frames; frames = 0; lastT = tick() end
+    fpsLabel.Text = "FPS: " .. fps_val
+    fpsLabel.TextColor3 = Theme.Lavender  -- <-- ДОБАВЛЕНО
+    local ok, ping = pcall(function() return math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()) end)
+    pingLabel.Text = "Ping: " .. (ok and ping or "?") .. " ms"
+    pingLabel.TextColor3 = Theme.Lavender  -- <-- ДОБАВЛЕНО
+    
+    -- Обновляем цвет обводки контейнера
+    if fp_gui then
+        local container = fp_gui:FindFirstChildOfClass("Frame")
+        if container then
+            local st = container:FindFirstChildOfClass("UIStroke")
+            if st then st.Color = Theme.Lavender end
+        end
+    end
+end)
      end
      function FpsPingModule:Disable()
          if fp_conn then fp_conn:Disconnect(); fp_conn = nil end
@@ -431,19 +442,29 @@ function HealthBarsESPModule:Enable()
         end
     end)
     
-    local updConn = RunService.RenderStepped:Connect(function()
-        for p, data in pairs(hbe_espBars) do
-            if p.Character then
-                local hum = p.Character:FindFirstChildOfClass("Humanoid")
-                if hum and data.fill and data.hpText then
-                    local hp = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
-                    data.fill.Size = UDim2.new(hp, 0, 1, 0)
-                    data.fill.BackgroundColor3 = hbe_getHealthColor(hp)
-                    data.hpText.Text = math.floor(hp * 100) .. "%"
+local updConn = RunService.RenderStepped:Connect(function()
+    for p, data in pairs(hbe_espBars) do
+        if p.Character then
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            if hum and data.fill and data.hpText then
+                local hp = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
+                data.fill.Size = UDim2.new(hp, 0, 1, 0)
+                data.fill.BackgroundColor3 = hbe_getHealthColor(hp)
+                data.hpText.Text = math.floor(hp * 100) .. "%"
+                
+                -- Обновляем цвет обводки
+                local bg = data.gui
+                if bg then
+                    local container = bg:FindFirstChild("BarContainer")
+                    if container then
+                        local stroke = container:FindFirstChildOfClass("UIStroke")
+                        if stroke then stroke.Color = Theme.Lavender end
+                    end
                 end
             end
         end
-    end)
+    end
+end)
     hbe_conn = {addConn, removeConn, updConn}
 end
 
@@ -645,10 +666,13 @@ CreateToggle(CombatTab, "Show Aimbot FOV Circle", function(state)
         if af_conn or not Drawing then return end
         af_circle = Drawing.new("Circle")
         af_circle.Thickness = 1; af_circle.NumSides = 60; af_circle.Radius = af_radius; af_circle.Filled = false; af_circle.Color = Theme.Lavender; af_circle.Visible = true; af_circle.Transparency = 0.8
-        af_conn = RunService.RenderStepped:Connect(function()
-            local cam = workspace.CurrentCamera
-            if cam and af_circle then af_circle.Position = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2) end
-        end)
+af_conn = RunService.RenderStepped:Connect(function()
+    local cam = workspace.CurrentCamera
+    if cam and af_circle then
+        af_circle.Position = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
+        af_circle.Color = Theme.Lavender  -- <-- ДОБАВЛЕНО
+    end
+end)
     else
         if af_conn then af_conn:Disconnect(); af_conn = nil end
         if af_circle then af_circle:Remove(); af_circle = nil end
@@ -701,22 +725,24 @@ local function ch_update()
     local cx, cy = cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2
     local g, l = ch_cfg.Gap, ch_cfg.Length
     
+    -- Обновляем цвет из темы
+    ch_cfg.Color = Theme.Lavender
+    
     if ch_cfg.Style == "Dot" then
         if ch_dot then
             ch_dot.Position = Vector2.new(cx, cy)
             ch_dot.Radius = ch_cfg.Thickness
+            ch_dot.Color = ch_cfg.Color
         end
     elseif ch_cfg.Style == "3Lines" then
-        -- Без верхней линии: только вниз, влево, вправо
-        if ch_lines[1] then ch_lines[1].From = Vector2.new(cx, cy + g); ch_lines[1].To = Vector2.new(cx, cy + g + l) end -- вниз
-        if ch_lines[2] then ch_lines[2].From = Vector2.new(cx - g, cy); ch_lines[2].To = Vector2.new(cx - g - l, cy) end -- влево
-        if ch_lines[3] then ch_lines[3].From = Vector2.new(cx + g, cy); ch_lines[3].To = Vector2.new(cx + g + l, cy) end -- вправо
+        if ch_lines[1] then ch_lines[1].From = Vector2.new(cx, cy + g); ch_lines[1].To = Vector2.new(cx, cy + g + l); ch_lines[1].Color = ch_cfg.Color end
+        if ch_lines[2] then ch_lines[2].From = Vector2.new(cx - g, cy); ch_lines[2].To = Vector2.new(cx - g - l, cy); ch_lines[2].Color = ch_cfg.Color end
+        if ch_lines[3] then ch_lines[3].From = Vector2.new(cx + g, cy); ch_lines[3].To = Vector2.new(cx + g + l, cy); ch_lines[3].Color = ch_cfg.Color end
     else
-        -- Cross (4 линии)
-        if ch_lines[1] then ch_lines[1].From = Vector2.new(cx, cy - g); ch_lines[1].To = Vector2.new(cx, cy - g - l) end -- вверх
-        if ch_lines[2] then ch_lines[2].From = Vector2.new(cx, cy + g); ch_lines[2].To = Vector2.new(cx, cy + g + l) end -- вниз
-        if ch_lines[3] then ch_lines[3].From = Vector2.new(cx - g, cy); ch_lines[3].To = Vector2.new(cx - g - l, cy) end -- влево
-        if ch_lines[4] then ch_lines[4].From = Vector2.new(cx + g, cy); ch_lines[4].To = Vector2.new(cx + g + l, cy) end -- вправо
+        if ch_lines[1] then ch_lines[1].From = Vector2.new(cx, cy - g); ch_lines[1].To = Vector2.new(cx, cy - g - l); ch_lines[1].Color = ch_cfg.Color end
+        if ch_lines[2] then ch_lines[2].From = Vector2.new(cx, cy + g); ch_lines[2].To = Vector2.new(cx, cy + g + l); ch_lines[2].Color = ch_cfg.Color end
+        if ch_lines[3] then ch_lines[3].From = Vector2.new(cx - g, cy); ch_lines[3].To = Vector2.new(cx - g - l, cy); ch_lines[3].Color = ch_cfg.Color end
+        if ch_lines[4] then ch_lines[4].From = Vector2.new(cx + g, cy); ch_lines[4].To = Vector2.new(cx + g + l, cy); ch_lines[4].Color = ch_cfg.Color end
     end
 end
 

@@ -677,6 +677,7 @@ do
     end
     Players.PlayerRemoving:Connect(function(p) clearTracer(p); clearCham(p) end)
     RunService.RenderStepped:Connect(function() pcall(updateTracers); pcall(updateChams) end)
+    end
 -- Freecam & FOV
 do
 local freecamConnection = nil
@@ -1395,6 +1396,5 @@ Ctx.UpdateVisualTheme = function()
         local frameStroke = FlyFrame:FindFirstChildOfClass("UIStroke")
         if frameStroke then frameStroke.Color = accent end
     end
-end
 end
 end

@@ -79,25 +79,21 @@ local function makeDraggable(guiObject)
     local dragStart = nil
     local startPos = nil
     
-    local function startDrag(input, obj)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            -- Не начинаем перетаскивание, если элемент интерактивный
-            if obj:IsA("TextButton") or obj:IsA("ScrollingFrame") or obj:IsA("TextBox") then
-                return
-            end
-            -- Не начинаем перетаскивание, если элемент находится внутри контейнера вкладок
-            local parent = obj.Parent
-            while parent do
-                if parent == Container then
-                    return
-                end
-                parent = parent.Parent
-            end
-            dragging = true
-            dragStart = input.Position
-            startPos = guiObject.Position
+local function startDrag(input, obj)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        -- Не начинаем перетаскивание, если элемент интерактивный
+        if obj:IsA("TextButton") or obj:IsA("ScrollingFrame") or obj:IsA("TextBox") then
+            return
         end
+        -- Не начинаем перетаскивание, если элемент находится внутри контейнера вкладок
+        if obj:FindFirstAncestor("MenuContainer") then
+            return
+        end
+        dragging = true
+        dragStart = input.Position
+        startPos = guiObject.Position
     end
+end
     
     local function stopDrag(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -227,6 +223,7 @@ InfoBtn.TextSize = 14
 InfoBtn.Parent = SidebarBottom
 Instance.new("UICorner", InfoBtn).CornerRadius = UDim.new(0, 8)
 local Container = Instance.new("Frame")
+Container.Name = "MenuContainer"
 Container.Size = UDim2.new(1, -155, 1, -55)
 Container.Position = UDim2.new(0, 145, 0, 45)
 Container.BackgroundTransparency = 1
@@ -1207,5 +1204,5 @@ end
 print("[Loader] Все модули обработаны.")
 task.wait(0.5) -- Дать время UI обновиться
 if Ctx.Notify then
-Ctx.Notify("Rite Cheat", "TEST44Меню загружено! Приятной игры❤️.", 5, "success")
+Ctx.Notify("Rite Cheat", "TEST45Меню загружено! Приятной игры❤️.", 5, "success")
 end

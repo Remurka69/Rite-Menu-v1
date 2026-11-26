@@ -196,10 +196,6 @@ if Ctx.UpdateVisualTheme then
 end
 
 if Ctx.Notify then Ctx.Notify("Theme", "Тема: " .. themeName, 2, "success") end
-                if Ctx.UpdateVisualTheme then
-    Ctx.UpdateVisualTheme(theme.accent)
-end
-            if Ctx.Notify then Ctx.Notify("Theme", "Тема: " .. themeName, 2, "success") end
         end)
     end
 

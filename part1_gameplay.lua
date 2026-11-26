@@ -677,6 +677,24 @@ do
     end
     Players.PlayerRemoving:Connect(function(p) clearTracer(p); clearCham(p) end)
     RunService.RenderStepped:Connect(function() pcall(updateTracers); pcall(updateChams) end)
+        -- Функция обновления цветов при смене темы
+function Ctx.UpdateVisualTheme()
+    -- Обновляем трассеры
+    if Settings.Tracers then
+        for _, line in pairs(_G.TracersList) do
+            if line then line.Color = Theme.Lavender end
+        end
+    end
+    
+    -- Обновляем чамсы
+    if Settings.Chams then
+        for _, skeleton in pairs(_G.Skeletons) do
+            for _, obj in pairs(skeleton) do
+                if obj then obj.Color = Theme.Lavender end
+            end
+        end
+    end
+end
 end
 
 -- Freecam & FOV

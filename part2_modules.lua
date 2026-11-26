@@ -687,7 +687,7 @@ end
  
 -- Crosshair, Distance ESP, Copy
 do
-local ch_cfg = { Gap = 6, Length = 10, Thickness = 2, Color = Theme.Lavender, Style = "Cross" }
+local ch_cfg = { Gap = 6, Length = 10, Thickness = 2, Color = Theme.Lavender, Style = "Cross", ColorMode = "Theme" }
 local ch_lines, ch_dot, ch_conn = {}, nil, nil
 
 local function ch_clear()
@@ -697,68 +697,70 @@ local function ch_clear()
 end
 
 local function ch_create()
-    ch_clear()
-    if ch_cfg.Style == "Dot" then
-        ch_dot = Drawing.new("Circle")
-        ch_dot.Radius = ch_cfg.Thickness
-        ch_dot.Thickness = 0
-        ch_dot.Filled = true
-        ch_dot.Color = ch_cfg.Color
-        ch_dot.Transparency = 1
-        ch_dot.Visible = true
-    else
-        local lineCount = ch_cfg.Style == "3Lines" and 3 or 4
-        for i = 1, lineCount do
-            local line = Drawing.new("Line")
-            line.Thickness = ch_cfg.Thickness
-            line.Color = ch_cfg.Color
-            line.Visible = true
-            line.Transparency = 1
-            ch_lines[i] = line
-        end
-    end
+ch_clear()
+-- Определяем цвет: Theme.Lavender если режим "Theme", иначе ch_cfg.Color
+local finalColor = ch_cfg.ColorMode == "Theme" and Theme.Lavender or ch_cfg.Color
+if ch_cfg.Style == "Dot" then
+ch_dot = Drawing.new("Circle")
+ch_dot.Radius = ch_cfg.Thickness
+ch_dot.Thickness = 0
+ch_dot.Filled = true
+ch_dot.Color = finalColor
+ch_dot.Transparency = 1
+ch_dot.Visible = true
+else
+local lineCount = ch_cfg.Style == "3Lines" and 3 or 4
+for i = 1, lineCount do
+local line = Drawing.new("Line")
+line.Thickness = ch_cfg.Thickness
+line.Color = finalColor
+line.Visible = true
+line.Transparency = 1
+ch_lines[i] = line
+end
+end
 end
 
 local function ch_update()
-    local cam = workspace.CurrentCamera
-    if not cam then return end
-    local cx, cy = cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2
-    local g, l = ch_cfg.Gap, ch_cfg.Length
-    
-    -- Обновляем цвет из темы
-    ch_cfg.Color = Theme.Lavender
-    
-    if ch_cfg.Style == "Dot" then
-        if ch_dot then
-            ch_dot.Position = Vector2.new(cx, cy)
-            ch_dot.Radius = ch_cfg.Thickness
-            ch_dot.Color = ch_cfg.Color
-        end
-    elseif ch_cfg.Style == "3Lines" then
-        if ch_lines[1] then ch_lines[1].From = Vector2.new(cx, cy + g); ch_lines[1].To = Vector2.new(cx, cy + g + l); ch_lines[1].Color = ch_cfg.Color end
-        if ch_lines[2] then ch_lines[2].From = Vector2.new(cx - g, cy); ch_lines[2].To = Vector2.new(cx - g - l, cy); ch_lines[2].Color = ch_cfg.Color end
-        if ch_lines[3] then ch_lines[3].From = Vector2.new(cx + g, cy); ch_lines[3].To = Vector2.new(cx + g + l, cy); ch_lines[3].Color = ch_cfg.Color end
-    else
-        if ch_lines[1] then ch_lines[1].From = Vector2.new(cx, cy - g); ch_lines[1].To = Vector2.new(cx, cy - g - l); ch_lines[1].Color = ch_cfg.Color end
-        if ch_lines[2] then ch_lines[2].From = Vector2.new(cx, cy + g); ch_lines[2].To = Vector2.new(cx, cy + g + l); ch_lines[2].Color = ch_cfg.Color end
-        if ch_lines[3] then ch_lines[3].From = Vector2.new(cx - g, cy); ch_lines[3].To = Vector2.new(cx - g - l, cy); ch_lines[3].Color = ch_cfg.Color end
-        if ch_lines[4] then ch_lines[4].From = Vector2.new(cx + g, cy); ch_lines[4].To = Vector2.new(cx + g + l, cy); ch_lines[4].Color = ch_cfg.Color end
-    end
+local cam = workspace.CurrentCamera
+if not cam then return end
+local cx, cy = cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2
+local g, l = ch_cfg.Gap, ch_cfg.Length
+-- Определяем цвет
+local finalColor = ch_cfg.ColorMode == "Theme" and Theme.Lavender or ch_cfg.Color
+if ch_cfg.Style == "Dot" then
+     if ch_dot then
+         ch_dot.Position = Vector2.new(cx, cy)
+         ch_dot.Radius = ch_cfg.Thickness
+         ch_dot.Color = finalColor
+     end
+ elseif ch_cfg.Style == "3Lines" then
+     if ch_lines[1] then ch_lines[1].From = Vector2.new(cx, cy + g); ch_lines[1].To = Vector2.new(cx, cy + g + l); ch_lines[1].Color = finalColor end
+     if ch_lines[2] then ch_lines[2].From = Vector2.new(cx - g, cy); ch_lines[2].To = Vector2.new(cx - g - l, cy); ch_lines[2].Color = finalColor end
+     if ch_lines[3] then ch_lines[3].From = Vector2.new(cx + g, cy); ch_lines[3].To = Vector2.new(cx + g + l, cy); ch_lines[3].Color = finalColor end
+ else
+     if ch_lines[1] then ch_lines[1].From = Vector2.new(cx, cy - g); ch_lines[1].To = Vector2.new(cx, cy - g - l); ch_lines[1].Color = finalColor end
+     if ch_lines[2] then ch_lines[2].From = Vector2.new(cx, cy + g); ch_lines[2].To = Vector2.new(cx, cy + g + l); ch_lines[2].Color = finalColor end
+     if ch_lines[3] then ch_lines[3].From = Vector2.new(cx - g, cy); ch_lines[3].To = Vector2.new(cx - g - l, cy); ch_lines[3].Color = finalColor end
+     if ch_lines[4] then ch_lines[4].From = Vector2.new(cx + g, cy); ch_lines[4].To = Vector2.new(cx + g + l, cy); ch_lines[4].Color = finalColor end
+ end
 end
 
 local CrosshairStyleDropdown
 CreateToggle(VisualsTab, "Crosshair", function(state)
-    if state then
-        if ch_conn then return end
-        if not Drawing then Ctx.Notify("Crosshair", "Drawing API недоступен", 3, "error"); return end
-        ch_create()
-        ch_conn = RunService.RenderStepped:Connect(ch_update)
-        if CrosshairStyleDropdown then CrosshairStyleDropdown.Visible = true end
-    else
-        if ch_conn then ch_conn:Disconnect(); ch_conn = nil end
-        ch_clear()
-        if CrosshairStyleDropdown then CrosshairStyleDropdown.Visible = false end
-    end
+if state then
+if ch_conn then return end
+if not Drawing then Ctx.Notify("Crosshair", "Drawing API недоступен", 3, "error"); return end
+ch_create()
+ch_conn = RunService.RenderStepped:Connect(ch_update)
+if CrosshairStyleDropdown then CrosshairStyleDropdown.Visible = true end
+if CrosshairColorModeDropdown then CrosshairColorModeDropdown.Visible = true end
+else
+if ch_conn then ch_conn:Disconnect(); ch_conn = nil end
+ch_clear()
+if CrosshairStyleDropdown then CrosshairStyleDropdown.Visible = false end
+if CrosshairColorModeDropdown then CrosshairColorModeDropdown.Visible = false end
+end
 end)
 
 CrosshairStyleDropdown = CreateDropdown(VisualsTab, "Crosshair Style", {"Cross", "3Lines", "Dot"}, "Cross", function(style)
@@ -768,6 +770,29 @@ CrosshairStyleDropdown = CreateDropdown(VisualsTab, "Crosshair Style", {"Cross",
     end
 end)
 CrosshairStyleDropdown.Visible = false
+  CrosshairStyleDropdown = CreateDropdown(VisualsTab, "Crosshair Style", {"Cross", "3Lines", "Dot"}, "Cross", function(style)
+ch_cfg.Style = style
+if ch_conn then ch_create() end
+end)
+CrosshairStyleDropdown.Visible = false
+
+-- Dropdown выбора режима цвета (Theme или Custom)
+local CrosshairColorModeDropdown = CreateDropdown(VisualsTab, "Crosshair Color", {"Theme", "Black", "White", "Red", "Green", "Yellow", "Pink", "Blue"}, "Theme", function(mode)
+    ch_cfg.ColorMode = mode
+    local colorMap = {
+        ["Theme"] = Theme.Lavender,
+        ["Black"] = Color3.fromRGB(0, 0, 0),
+        ["White"] = Color3.fromRGB(255, 255, 255),
+        ["Red"] = Color3.fromRGB(255, 80, 80),
+        ["Green"] = Color3.fromRGB(80, 255, 120),
+        ["Yellow"] = Color3.fromRGB(255, 220, 80),
+        ["Pink"] = Color3.fromRGB(255, 120, 180),
+        ["Blue"] = Color3.fromRGB(80, 160, 255)
+    }
+    ch_cfg.Color = colorMap[mode] or Theme.Lavender
+    if ch_conn then ch_create() end
+end)
+CrosshairColorModeDropdown.Visible = false
 
 CreateSlider(VisualsTab, "Crosshair Gap", 2, 20, 6, function(v) ch_cfg.Gap = v end)
 CreateSlider(VisualsTab, "Crosshair Length", 4, 30, 10, function(v) ch_cfg.Length = v end)

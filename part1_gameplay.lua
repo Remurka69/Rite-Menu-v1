@@ -1397,3 +1397,4 @@ Ctx.UpdateVisualTheme = function()
     end
 end
 end
+end

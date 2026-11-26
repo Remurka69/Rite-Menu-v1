@@ -1315,9 +1315,6 @@ do
                 end
             end)
 
-            if Ctx.Notify then
-                Ctx.Notify("Follow", "Режим активирован", 2, "success")
-            end
         else
             if followConnection then
                 followConnection:Disconnect()
@@ -1340,9 +1337,6 @@ do
             local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
             if myHum then myHum.PlatformStand = false end
 
-            if Ctx.Notify then
-                Ctx.Notify("Follow", "Режим деактивирован", 2, "info")
-            end
         end
     end)
 

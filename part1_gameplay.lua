@@ -1348,4 +1348,26 @@ do
         followHeight = v
     end)
 end
+    -- Функция обновления цветов при смене темы
+Ctx.UpdateVisualTheme = function(accentColor)
+    -- Обновляем Fly Panel
+    if FlyFrame then
+        local textLabel = FlyFrame:FindFirstChildOfClass("TextLabel")
+        if textLabel then textLabel.TextColor3 = accentColor end
+        local closebutton = FlyFrame:FindFirstChild("Close")
+        if closebutton then closebutton.TextColor3 = accentColor end
+        local mine = FlyFrame:FindFirstChild("mine")
+        if mine then mine.TextColor3 = accentColor end
+        local plus = FlyFrame:FindFirstChild("plus")
+        if plus then plus.TextColor3 = accentColor end
+        local onof = FlyFrame:FindFirstChild("onof")
+        if onof and onof.Text == "ON" then
+            onof.TextColor3 = accentColor
+            local btnStroke = onof:FindFirstChildOfClass("UIStroke")
+            if btnStroke then btnStroke.Color = accentColor end
+        end
+        local frameStroke = FlyFrame:FindFirstChildOfClass("UIStroke")
+        if frameStroke then frameStroke.Color = accentColor end
+    end
+end
 end

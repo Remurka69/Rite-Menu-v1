@@ -763,8 +763,8 @@ CreateToggle(VisualsTab, "Crosshair", function(state)
     end
 end)
 
--- Сначала присваиваем значение, потом обращаемся к .Visible
-CrosshairStyleDropdown = CreateDropdown(VisualsTab, "Crosshair Style", {"Cross", "3Lines", "Dot"}, "Cross", function(style)
+-- Сначала создаём оба dropdown'а
+local CrosshairStyleDropdown = CreateDropdown(VisualsTab, "Crosshair Style", {"Cross", "3Lines", "Dot"}, "Cross", function(style)
     ch_cfg.Style = style
     if ch_conn then ch_create() end
 end)
@@ -786,6 +786,23 @@ local CrosshairColorModeDropdown = CreateDropdown(VisualsTab, "Crosshair Color",
     if ch_conn then ch_create() end
 end)
 CrosshairColorModeDropdown.Visible = false
+
+-- Теперь CreateToggle, который использует уже созданные dropdown'ы
+CreateToggle(VisualsTab, "Crosshair", function(state)
+    if state then
+        if ch_conn then return end
+        if not Drawing then Ctx.Notify("Crosshair", "Drawing API недоступен", 3, "error"); return end
+        ch_create()
+        ch_conn = RunService.RenderStepped:Connect(ch_update)
+        if CrosshairStyleDropdown then CrosshairStyleDropdown.Visible = true end
+        if CrosshairColorModeDropdown then CrosshairColorModeDropdown.Visible = true end
+    else
+        if ch_conn then ch_conn:Disconnect(); ch_conn = nil end
+        ch_clear()
+        if CrosshairStyleDropdown then CrosshairStyleDropdown.Visible = false end
+        if CrosshairColorModeDropdown then CrosshairColorModeDropdown.Visible = false end
+    end
+end)
 
 CreateSlider(VisualsTab, "Crosshair Gap", 2, 20, 6, function(v) ch_cfg.Gap = v end)
 CreateSlider(VisualsTab, "Crosshair Length", 4, 30, 10, function(v) ch_cfg.Length = v end)

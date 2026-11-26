@@ -1354,4 +1354,3 @@ do
         followHeight = v
     end)
 end
-    

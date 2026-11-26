@@ -1261,7 +1261,7 @@ do
     end)
 end
 
-    -- Follow Behind Player (телепортация и полёт сзади выбранного игрока)
+-- Follow Behind Player (телепортация и полёт сзади выбранного игрока)
 do
     local followTarget = nil
     local followConnection = nil
@@ -1269,6 +1269,7 @@ do
     local followHeight = 3
     local followEnabled = false
     local savedNoclip = nil
+    local savedPosition = nil  -- <-- ДОБАВЛЕНО: объявляем переменную на уровне блока
 
     CreatePlayerListDropdown(MovementTab, "Follow Target", function(name)
         followTarget = Players:FindFirstChild(name)
@@ -1282,7 +1283,7 @@ do
         if state then
             local myChar = player.Character
             local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
-            local savedPosition = myHRP and myHRP.CFrame or nil
+            savedPosition = myHRP and myHRP.CFrame or nil  -- <-- УБРАЛИ local, теперь пишем во внешнюю переменную
             if followConnection then followConnection:Disconnect() end
             -- Сохраняем состояние noclip и включаем его, чтобы не застревать в стенах
             savedNoclip = Settings.Noclip
@@ -1319,12 +1320,17 @@ do
             end
         else
             if followConnection then
-if savedPosition and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-    player.Character.HumanoidRootPart.CFrame = savedPosition
-end
                 followConnection:Disconnect()
                 followConnection = nil
             end
+            -- Возвращаем персонажа на сохранённую позицию
+            if savedPosition and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = savedPosition
+                player.Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+                player.Character.HumanoidRootPart.RotVelocity = Vector3.new(0, 0, 0)
+            end
+            savedPosition = nil  -- очищаем, чтобы не держать ссылку
+            
             -- Возвращаем noclip в исходное состояние
             if savedNoclip ~= nil then
                 Settings.Noclip = savedNoclip
@@ -1349,4 +1355,3 @@ end
     end)
 end
     
-end

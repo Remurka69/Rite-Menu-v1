@@ -748,29 +748,28 @@ end
 
 local CrosshairStyleDropdown
 CreateToggle(VisualsTab, "Crosshair", function(state)
-if state then
-if ch_conn then return end
-if not Drawing then Ctx.Notify("Crosshair", "Drawing API недоступен", 3, "error"); return end
-ch_create()
-ch_conn = RunService.RenderStepped:Connect(ch_update)
-if CrosshairStyleDropdown then CrosshairStyleDropdown.Visible = true end
-if CrosshairColorModeDropdown then CrosshairColorModeDropdown.Visible = true end
-else
-if ch_conn then ch_conn:Disconnect(); ch_conn = nil end
-ch_clear()
-if CrosshairStyleDropdown then CrosshairStyleDropdown.Visible = false end
-if CrosshairColorModeDropdown then CrosshairColorModeDropdown.Visible = false end
-end
+    if state then
+        if ch_conn then return end
+        if not Drawing then Ctx.Notify("Crosshair", "Drawing API недоступен", 3, "error"); return end
+        ch_create()
+        ch_conn = RunService.RenderStepped:Connect(ch_update)
+        if CrosshairStyleDropdown then CrosshairStyleDropdown.Visible = true end
+        if CrosshairColorModeDropdown then CrosshairColorModeDropdown.Visible = true end
+    else
+        if ch_conn then ch_conn:Disconnect(); ch_conn = nil end
+        ch_clear()
+        if CrosshairStyleDropdown then CrosshairStyleDropdown.Visible = false end
+        if CrosshairColorModeDropdown then CrosshairColorModeDropdown.Visible = false end
+    end
 end)
 
-CrosshairStyleDropdown.Visible = false
-  CrosshairStyleDropdown = CreateDropdown(VisualsTab, "Crosshair Style", {"Cross", "3Lines", "Dot"}, "Cross", function(style)
-ch_cfg.Style = style
-if ch_conn then ch_create() end
+-- Сначала присваиваем значение, потом обращаемся к .Visible
+CrosshairStyleDropdown = CreateDropdown(VisualsTab, "Crosshair Style", {"Cross", "3Lines", "Dot"}, "Cross", function(style)
+    ch_cfg.Style = style
+    if ch_conn then ch_create() end
 end)
 CrosshairStyleDropdown.Visible = false
 
--- Dropdown выбора режима цвета (Theme или Custom)
 local CrosshairColorModeDropdown = CreateDropdown(VisualsTab, "Crosshair Color", {"Theme", "Black", "White", "Red", "Green", "Yellow", "Pink", "Blue"}, "Theme", function(mode)
     ch_cfg.ColorMode = mode
     local colorMap = {

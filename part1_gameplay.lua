@@ -1349,52 +1349,52 @@ do
 end
 -- Единая функция обновления цветов при смене темы
 Ctx.UpdateVisualTheme = function()
-    local accent = Theme.Lavender
-    
-    -- 1. Трассеры
-    if Settings.Tracers then
-        for _, line in pairs(_G.TracersList) do
-            if line and line.Color then line.Color = accent end
+local accent = Theme.Lavender
+
+-- 1. Трассеры
+if Settings.Tracers then
+    for _, line in pairs(_G.TracersList) do
+        if line and line.Color then line.Color = accent end
+    end
+end
+
+-- 2. Чамсы
+if Settings.Chams then
+    for _, skeleton in pairs(_G.Skeletons) do
+        for _, obj in pairs(skeleton) do
+            if obj and obj.Color then obj.Color = accent end
         end
     end
-    
-    -- 2. Чамсы
-    if Settings.Chams then
-        for _, skeleton in pairs(_G.Skeletons) do
-            for _, obj in pairs(skeleton) do
-                if obj and obj.Color then obj.Color = accent end
-            end
+end
+
+-- 3. ESP имена
+if Settings.ESP then
+    for _, bg in ipairs(Ctx.Gui.ScreenGui:GetChildren()) do
+        if bg:IsA("BillboardGui") then
+            local tl = bg:FindFirstChildOfClass("TextLabel")
+            if tl then tl.TextColor3 = Settings.ESPColor end
         end
     end
-    
-    -- 3. ESP имена
-    if Settings.ESP then
-        for _, bg in ipairs(Ctx.Gui.ScreenGui:GetChildren()) do
-            if bg:IsA("BillboardGui") then
-                local tl = bg:FindFirstChildOfClass("TextLabel")
-                if tl then tl.TextColor3 = Settings.ESPColor end
-            end
-        end
+end
+
+-- 4. Fly Panel
+if FlyFrame then
+    local textLabel = FlyFrame:FindFirstChildOfClass("TextLabel")
+    if textLabel then textLabel.TextColor3 = accent end
+    local closebutton = FlyFrame:FindFirstChild("Close")
+    if closebutton then closebutton.TextColor3 = accent end
+    local mine = FlyFrame:FindFirstChild("mine")
+    if mine then mine.TextColor3 = accent end
+    local plus = FlyFrame:FindFirstChild("plus")
+    if plus then plus.TextColor3 = accent end
+    local onof = FlyFrame:FindFirstChild("onof")
+    if onof and onof.Text == "ON" then
+        onof.TextColor3 = accent
+        local btnStroke = onof:FindFirstChildOfClass("UIStroke")
+        if btnStroke then btnStroke.Color = accent end
     end
-    
-    -- 4. Fly Panel
-    if FlyFrame then
-        local textLabel = FlyFrame:FindFirstChildOfClass("TextLabel")
-        if textLabel then textLabel.TextColor3 = accent end
-        local closebutton = FlyFrame:FindFirstChild("Close")
-        if closebutton then closebutton.TextColor3 = accent end
-        local mine = FlyFrame:FindFirstChild("mine")
-        if mine then mine.TextColor3 = accent end
-        local plus = FlyFrame:FindFirstChild("plus")
-        if plus then plus.TextColor3 = accent end
-        local onof = FlyFrame:FindFirstChild("onof")
-        if onof and onof.Text == "ON" then
-            onof.TextColor3 = accent
-            local btnStroke = onof:FindFirstChildOfClass("UIStroke")
-            if btnStroke then btnStroke.Color = accent end
-        end
-        local frameStroke = FlyFrame:FindFirstChildOfClass("UIStroke")
-        if frameStroke then frameStroke.Color = accent end
-    end
+    local frameStroke = FlyFrame:FindFirstChildOfClass("UIStroke")
+    if frameStroke then frameStroke.Color = accent end
+end
 end
 end

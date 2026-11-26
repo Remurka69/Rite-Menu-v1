@@ -763,12 +763,6 @@ if CrosshairColorModeDropdown then CrosshairColorModeDropdown.Visible = false en
 end
 end)
 
-CrosshairStyleDropdown = CreateDropdown(VisualsTab, "Crosshair Style", {"Cross", "3Lines", "Dot"}, "Cross", function(style)
-    ch_cfg.Style = style
-    if ch_conn then
-        ch_create()
-    end
-end)
 CrosshairStyleDropdown.Visible = false
   CrosshairStyleDropdown = CreateDropdown(VisualsTab, "Crosshair Style", {"Cross", "3Lines", "Dot"}, "Cross", function(style)
 ch_cfg.Style = style

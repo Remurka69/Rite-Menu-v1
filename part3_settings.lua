@@ -188,6 +188,14 @@ end
             MainFrame.BackgroundColor3 = theme.mainBg
             Sidebar.BackgroundColor3 = theme.sidebar
             OldColors = { accent = theme.accent, sidebar = theme.sidebar, element = theme.element, mainBg = theme.mainBg }
+                OldColors = { accent = theme.accent, sidebar = theme.sidebar, element = theme.element, mainBg = theme.mainBg }
+
+-- Обновляем цвета визуальных функций
+if Ctx.UpdateVisualTheme then
+    Ctx.UpdateVisualTheme()
+end
+
+if Ctx.Notify then Ctx.Notify("Theme", "Тема: " .. themeName, 2, "success") end
                 if Ctx.UpdateVisualTheme then
     Ctx.UpdateVisualTheme(theme.accent)
 end

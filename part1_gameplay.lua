@@ -341,7 +341,7 @@ CreateToggle(MovementTab, "Infinite Jump", function(state) Settings.InfJump = st
 CreateToggle(MovementTab, "Noclip", function(state) Settings.Noclip = state end)
 CreateToggle(MovementTab, "Spinbot", function(state) Settings.Spinbot = state end)
 
-CreateButton(MovementTab, "Open Fly Panel", function()
+CreateButton(MovementTab, "Open Fly Panel (first activation double tap)", function()
     local flyPanel = initFlyPanel()
     flyPanel.Visible = not flyPanel.Visible
 end)
@@ -896,7 +896,7 @@ end
 -- Long Jump
 do
     local longJumpConn = nil
-    local longJumpForce = 150
+    local longJumpForce = 50
     CreateToggle(MovementTab, "Long Jump", function(state)
         Settings.LongJump = state
         if state then
@@ -1155,71 +1155,6 @@ do
     end)
 end
 
--- Vehicle Fly
-do
-    local vehicleFlyConn = nil
-    local vehicleFlySpeed = 50
-    CreateToggle(MovementTab, "Vehicle Fly", function(state)
-        Settings.VehicleFly = state
-        if state then
-            if vehicleFlyConn then vehicleFlyConn:Disconnect() end
-            vehicleFlyConn = RunService.Heartbeat:Connect(function()
-                local char = player.Character
-                if not char then return end
-                local seat = char:FindFirstChildWhichIsA("VehicleSeat") or char:FindFirstChildWhichIsA("Seat")
-                if seat and seat.Occupant then
-                    local bodyGyro = seat:FindFirstChild("VehicleFlyGyro")
-                    local bodyVel = seat:FindFirstChild("VehicleFlyVelocity")
-                    if not bodyGyro then
-                        bodyGyro = Instance.new("BodyGyro")
-                        bodyGyro.Name = "VehicleFlyGyro"
-                        bodyGyro.P = 10000
-                        bodyGyro.maxTorque = Vector3.new(math.huge, math.huge, math.huge)
-                        bodyGyro.Parent = seat
-                    end
-                    if not bodyVel then
-                        bodyVel = Instance.new("BodyVelocity")
-                        bodyVel.Name = "VehicleFlyVelocity"
-                        bodyVel.maxForce = Vector3.new(math.huge, math.huge, math.huge)
-                        bodyVel.Parent = seat
-                    end
-                    bodyGyro.cframe = workspace.CurrentCamera.CFrame
-                    local moveDir = Vector3.new(0, 0, 0)
-                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + workspace.CurrentCamera.CFrame.LookVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - workspace.CurrentCamera.CFrame.LookVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - workspace.CurrentCamera.CFrame.RightVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + workspace.CurrentCamera.CFrame.RightVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
-                    if moveDir.Magnitude > 0 then
-                        bodyVel.Velocity = moveDir.Unit * vehicleFlySpeed
-                    else
-                        bodyVel.Velocity = Vector3.new(0, 0, 0)
-                    end
-                else
-                    local seatGyro = seat and seat:FindFirstChild("VehicleFlyGyro")
-                    local seatVel = seat and seat:FindFirstChild("VehicleFlyVelocity")
-                    if seatGyro then seatGyro:Destroy() end
-                    if seatVel then seatVel:Destroy() end
-                end
-            end)
-        else
-            if vehicleFlyConn then vehicleFlyConn:Disconnect(); vehicleFlyConn = nil end
-            for _, seat in ipairs(workspace:GetDescendants()) do
-                if seat:IsA("VehicleSeat") or seat:IsA("Seat") then
-                    local gyro = seat:FindFirstChild("VehicleFlyGyro")
-                    local vel = seat:FindFirstChild("VehicleFlyVelocity")
-                    if gyro then gyro:Destroy() end
-                    if vel then vel:Destroy() end
-                end
-            end
-        end
-    end)
-    CreateSlider(MovementTab, "Vehicle Fly Speed", 10, 200, 50, function(v)
-        vehicleFlySpeed = v
-    end)
-end
-
 -- Water Walk
 do
     local waterWalkConn = nil
@@ -1345,6 +1280,9 @@ do
     CreateToggle(MovementTab, "Follow Behind Player", function(state)
         followEnabled = state
         if state then
+            local myChar = player.Character
+            local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+            local savedPosition = myHRP and myHRP.CFrame or nil
             if followConnection then followConnection:Disconnect() end
             -- Сохраняем состояние noclip и включаем его, чтобы не застревать в стенах
             savedNoclip = Settings.Noclip
@@ -1381,6 +1319,9 @@ do
             end
         else
             if followConnection then
+if savedPosition and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+    player.Character.HumanoidRootPart.CFrame = savedPosition
+end
                 followConnection:Disconnect()
                 followConnection = nil
             end

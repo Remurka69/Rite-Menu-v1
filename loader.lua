@@ -85,6 +85,14 @@ local function makeDraggable(guiObject)
             if obj:IsA("TextButton") or obj:IsA("ScrollingFrame") or obj:IsA("TextBox") then
                 return
             end
+            -- Не начинаем перетаскивание, если элемент находится внутри контейнера вкладок
+            local parent = obj.Parent
+            while parent do
+                if parent == Container then
+                    return
+                end
+                parent = parent.Parent
+            end
             dragging = true
             dragStart = input.Position
             startPos = guiObject.Position
@@ -1199,5 +1207,5 @@ end
 print("[Loader] Все модули обработаны.")
 task.wait(0.5) -- Дать время UI обновиться
 if Ctx.Notify then
-Ctx.Notify("Rite Cheat", "TEST43Меню загружено! Приятной игры❤️.", 5, "success")
+Ctx.Notify("Rite Cheat", "TEST44Меню загружено! Приятной игры❤️.", 5, "success")
 end

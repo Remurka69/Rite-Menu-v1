@@ -728,12 +728,10 @@ CreateToggle(VisualsTab, "Crosshair", function(state)
         ch_create()
         ch_conn = RunService.RenderStepped:Connect(ch_update)
         if CrosshairStyleDropdown then CrosshairStyleDropdown.Visible = true end
-        Ctx.Notify("Crosshair", "Прицел активирован", 2, "success")
     else
         if ch_conn then ch_conn:Disconnect(); ch_conn = nil end
         ch_clear()
         if CrosshairStyleDropdown then CrosshairStyleDropdown.Visible = false end
-        Ctx.Notify("Crosshair", "Прицел деактивирован", 2, "info")
     end
 end)
 
@@ -790,12 +788,10 @@ end)
                  end
              end)
              de_conn = {addConn, remConn, updConn}
-             Ctx.Notify("Distance ESP", "Отображение дистанции включено", 2, "success")
          else
              if de_conn then for _, c in ipairs(de_conn) do c:Disconnect() end; de_conn = nil end
              for _, bg in pairs(de_bars) do pcall(function() bg:Destroy() end) end
              de_bars = {}
-             Ctx.Notify("Distance ESP", "Отображение дистанции выключено", 2, "info")
          end
      end)
      local function copyToClipboard(text, label)

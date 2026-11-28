@@ -18,6 +18,7 @@ local PlayerTab = Ctx.Pages.Player
 local VisualsTab = Ctx.Pages.Visuals
 local WorldTab = Ctx.Pages.World
 local MiscTab = Ctx.Pages.Misc
+local FunTab = Ctx.Pages.Fun
 local CreateButton = Ctx.UI.CreateButton
 local CreateToggle = Ctx.UI.CreateToggle
 local CreateSlider = Ctx.UI.CreateSlider
@@ -1347,6 +1348,124 @@ do
         followHeight = v
     end)
 end
+
+-- ==========================================
+-- FUN TAB: Spin TP to Player
+-- ==========================================
+do
+    local spinTarget = nil
+    local spinConnection = nil
+    local spinRadius = 5
+    local spinSpeed = 2
+    local spinAngle = 0
+    local spinEnabled = false
+    local savedPosition = nil
+
+    -- Dropdown для выбора игрока
+    CreatePlayerListDropdown(FunTab, "Spin Target", function(name)
+        spinTarget = Players:FindFirstChild(name)
+        if Ctx.Notify then
+            Ctx.Notify("Spin TP", "Цель: " .. (name or "не выбрана"), 2, "info")
+        end
+    end)
+
+    -- Тумблер включения вращения
+    CreateToggle(FunTab, "Spin TP to Player", function(state)
+        spinEnabled = state
+        if state then
+            local myChar = player.Character
+            local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+            local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+
+            -- Сохраняем позицию, чтобы вернуться после выключения
+            savedPosition = myHRP and myHRP.CFrame or nil
+            spinAngle = 0
+
+            if spinConnection then spinConnection:Disconnect() end
+
+            -- Включаем noclip, чтобы не застревать в стенах при быстром вращении
+            local savedNoclip = Settings.Noclip
+            Settings.Noclip = true
+
+            spinConnection = RunService.Heartbeat:Connect(function(dt)
+                local myChar = player.Character
+                local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+
+                -- Если цель пропала — выключаем
+                if not spinTarget or not spinTarget.Parent then
+                    spinTarget = nil
+                    return
+                end
+
+                local targetChar = spinTarget.Character
+                local targetHRP = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+
+                if myHRP and targetHRP then
+                    -- Увеличиваем угол (скорость зависит от dt, чтобы было плавно)
+                    spinAngle = spinAngle + dt * spinSpeed
+
+                    -- Вычисляем позицию на окружности вокруг цели
+                    local offsetX = math.cos(spinAngle) * spinRadius
+                    local offsetZ = math.sin(spinAngle) * spinRadius
+                    local newPos = targetHRP.Position + Vector3.new(offsetX, 0, offsetZ)
+
+                    -- Телепортируем персонажа
+                    myHRP.CFrame = CFrame.new(newPos)
+
+                    -- Обнуляем скорость, чтобы не было инерции
+                    myHRP.Velocity = Vector3.new(0, 0, 0)
+                    myHRP.RotVelocity = Vector3.new(0, 0, 0)
+
+                    -- Чтобы персонаж не падал и стоял ровно
+                    if myHum then myHum.PlatformStand = true end
+                end
+            end)
+
+            -- Запоминаем noclip, чтобы вернуть его при выключении
+            spinConnection:Once("Disconnect", function()
+                Settings.Noclip = savedNoclip
+            end)
+            -- Сохраняем ссылку для ручного отключения
+            local originalDisconnect = spinConnection.Disconnect
+            local wrappedConn = spinConnection
+            spinConnection.Disconnect = function(self)
+                Settings.Noclip = savedNoclip
+                originalDisconnect(self)
+            end
+
+        else
+            -- Выключаем
+            if spinConnection then
+                spinConnection:Disconnect()
+                spinConnection = nil
+            end
+
+            -- Возвращаем персонажа на исходную позицию
+            if savedPosition and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = savedPosition
+                player.Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+                player.Character.HumanoidRootPart.RotVelocity = Vector3.new(0, 0, 0)
+            end
+            savedPosition = nil
+
+            local myChar = player.Character
+            local myHum = myChar and myChar:FindFirstChildOfClass("Humanoid")
+            if myHum then myHum.PlatformStand = false end
+        end
+    end)
+
+    -- Слайдер радиуса орбиты
+    CreateSlider(FunTab, "Spin Radius", 2, 20, 5, function(v)
+        spinRadius = v
+    end)
+
+    -- Слайдер скорости вращения
+    CreateSlider(FunTab, "Spin Speed", 1, 20, 2, function(v)
+        spinSpeed = v
+    end)
+end
+    
 -- Единая функция обновления цветов при смене темы
 Ctx.UpdateVisualTheme = function()
 local accent = Theme.Lavender

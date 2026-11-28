@@ -702,6 +702,7 @@ Player = CreateTab("Player"),
 Visuals = CreateTab("Visuals"),
 World = CreateTab("World"),
 Misc = CreateTab("Misc"),
+Fun = CreateTab("Fun"),
 Settings = CreateSpecialTab("Settings", SettingsBtn),
 }
 Ctx.Gui = {
@@ -802,9 +803,17 @@ local CategoriesData = {
              {name = "Copy My UserId", desc = "Копировать ID пользователя"},
              {name = "Copy Server ID", desc = "Копировать ID сервера"},
              {name = "Copy My Coordinates", desc = "Копировать свои координаты"}
-         }
-     }
- }
+                }
+         },
+                Fun = {
+        name = "Fun", icon = "🎉", description = "Веселые и забавные функции",
+        functions = {
+            {name = "T-Pose / Dance", desc = "Заставляет персонажа замереть в T-Pose"},
+            {name = "Clone My Character", desc = "Создает временный клон вашего персонажа"}
+        }
+    }
+}
+        
  local Translations = {
      Combat = {
          description = "Combat functions and PvP",
@@ -872,7 +881,12 @@ local CategoriesData = {
          ["Copy My UserId"] = "Copy user ID to clipboard",
          ["Copy Server ID"] = "Copy server ID to clipboard",
          ["Copy My Coordinates"] = "Copy your coordinates to clipboard"
-     }
+     },
+           Fun = {
+        description = "Fun and silly functions",
+        ["T-Pose / Dance"] = "Forces character to freeze in T-Pose",
+        ["Clone My Character"] = "Creates a temporary clone of your character"
+    }
  }
  local FoldersView = Instance.new("Frame", InfoPage)
  FoldersView.Size = UDim2.new(1, 0, 1, 0)
